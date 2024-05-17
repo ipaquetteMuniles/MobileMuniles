@@ -38,10 +38,12 @@ export default FormInput;
 
 const styles = StyleSheet.create({
     field: {
-        marginBottom: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row'
+        marginBottom: 16,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        backgroundColor: '#fff',
     },
     label: {
         fontSize: 20,

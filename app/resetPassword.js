@@ -7,22 +7,29 @@
 ////////////////////////////////////////////////
 //Bibliothèques
 ////////////////////////////////////////////////
-import { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Image } from 'react-native';
-import { getAuth
-    
- } from 'firebase/auth';
+import { StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from 'expo-router';
 
-export default function Home() {
-    const auth = getAuth()
-    
-    return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Home</Text>
-        </View>
-    )
+////////////////////////////////////////////////
+//Composants
+////////////////////////////////////////////////
+
+////////////////////////////////////////////////
+// App
+////////////////////////////////////////////////
+const ResetPassword = ()=> {
+    const navigation = useNavigation();
+
+  return (
+   <View style={styles.container}>
+    <Text style={styles.title}>
+        Réinitialiser le mot de passe
+    </Text>
+   </View>
+  );
 }
 
+export default ResetPassword;
 
 const styles = StyleSheet.create({
     container: {

@@ -12,7 +12,7 @@ import React, { useEffect, useState, useContext, createContext } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from 'expo-router';
 
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -32,7 +32,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app)
+export const auth = getAuth(app)
 export const UserContext = createContext();
 
 export default function TabLayout() {
@@ -43,8 +43,12 @@ export default function TabLayout() {
   useEffect(() => {
     onAuthStateChanged(auth, (utilisateur) => {
       if (utilisateur) {
-        setConnection(true);
-        navigation.navigate("accueil")
+
+        if (utilisateur.emailVerified) {
+          setConnection(true);
+          navigation.navigate("accueil")
+        }
+
 
       }
     });

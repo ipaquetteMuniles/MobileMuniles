@@ -14,7 +14,7 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "components/FormButton.js",
-    "app/(tabs)/index.tsx",
+    "app/(tabs)/index.js",
     "components/FormInput.js"
-, "app/(tabs)/profil.js"  ]
+, "app/(tabs)/profil.js", "app/(tabs)/signup.js"  ]
 }
