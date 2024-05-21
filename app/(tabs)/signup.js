@@ -14,7 +14,7 @@ import { createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailA
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 import { doc, getFirestore, setDoc } from 'firebase/firestore';
-
+import PhoneInput from 'react-native-phone-input'
 ////////////////////////////////////////////////
 //Composants
 ////////////////////////////////////////////////
@@ -121,13 +121,27 @@ export default function Signup() {
                 useState={setLastName}
                 valueUseState={lastname}
             />
-            <FormInput
-                label="Téléphone"
-                placeholder="(123) 456-7890"
-                useState={setPhone}
-                valueUseState={phone}
-                inputMode="tel"
-            />
+
+            <View style={styles.field}>
+                <Text style={styles.label}>Numéro de téléphone</Text>
+
+                <PhoneInput
+                        style={{
+                            margin: 10,
+                            width: '90%'
+                        }}
+
+                        placeholder={'Phone number'}
+                        autoFormat={true}
+                        confirmText={'Done'}
+                        confirmTextStyle={{ color: 'white', backgroundColor: 'blue', padding: 5 }}
+                        countriesList={require('../../countries.json')}
+                        initialCountry='ca'
+                        value={phone}
+                        onChangePhoneNumber={setPhone}
+                    />
+            </View>
+           
             <FormInput
                 label="Mot de passe"
                 placeholder="###"
@@ -162,5 +176,19 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         textAlign: 'center', 
         color: '#333', 
+    },
+    field: {
+        marginBottom: 16,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        backgroundColor: '#fff',
+    },
+    label: {
+        fontSize: 20,
+        color: '#060270',
+        marginBottom: 10,
+        fontWeight: 'bold',
     }
 });

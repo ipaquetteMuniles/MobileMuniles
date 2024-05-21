@@ -20,7 +20,7 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 ////////////////////////////////////////////////
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyDi7BZBmGCLP9NxLr7cbeTFarjyHWElUXY",
   authDomain: "mobilemuniles.firebaseapp.com",
   projectId: "mobilemuniles",
