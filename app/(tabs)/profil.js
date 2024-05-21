@@ -204,10 +204,10 @@ const Profil = () => {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {/* user enter recaptcha */}
-            <FirebaseRecaptchaVerifierModal
+            {/* <FirebaseRecaptchaVerifierModal
                 ref={recaptchaVerifier}
                 firebaseConfig={firebaseConfig}
-            />
+            /> */}
             {/* si l'utilisateur */}
             {auth.currentUser && (
                 <View>

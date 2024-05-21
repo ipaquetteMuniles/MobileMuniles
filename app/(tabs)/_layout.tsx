@@ -84,7 +84,7 @@ export default function TabLayout() {
 
           }}
         />
-
+        {/* UTILISATEUR CONNECTÉ */}
         <Tabs.Screen
           name="accueil"
           options={{
@@ -93,6 +93,18 @@ export default function TabLayout() {
               <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
             ),
             href: isconnected ? '/accueil' : null
+          }}
+        />
+
+        
+        <Tabs.Screen
+          name="map"
+          options={{
+            title: 'Carte',
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon name={focused ? 'map' : 'map-outline'} color={color} />
+            ),
+            href: isconnected ? '/map' : null
           }}
         />
 
