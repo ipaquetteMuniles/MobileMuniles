@@ -7,11 +7,11 @@
 ////////////////////////////////////////////////
 //Bibliothèques
 ////////////////////////////////////////////////
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
 import { sendEmailVerification, signInWithEmailAndPassword  } from "firebase/auth";
 import { getAuth } from 'firebase/auth';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from 'expo-router';
 
 ////////////////////////////////////////////////
 //Composants
@@ -75,9 +75,12 @@ export default function LoginScreen() {
                 setTextModal(errorMessage)
                 setModalVisible(true)
             });
-
-
     }
+
+    useEffect(()=>{
+        if(auth.currentUser)
+            navigation.navigate('accueil')
+    },[auth])
 
     return (
         <ScrollView contentContainerStyle={styles.container}>

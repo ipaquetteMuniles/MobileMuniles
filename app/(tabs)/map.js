@@ -8,24 +8,38 @@
 //Bibliothèques
 ////////////////////////////////////////////////
 import { StyleSheet, Text, View } from 'react-native';
-// import MapView from 'react-native-maps';
+// import MapView, { Marker } from 'react-native-maps';
+
 ////////////////////////////////////////////////
 //Composants
 ////////////////////////////////////////////////
-
+import { erosions_db } from '../../EROSIONS_DB'
 ////////////////////////////////////////////////
 // App
 ////////////////////////////////////////////////
-const App = () => {
+const Map = () => {
     return (
         <View style={styles.container}>
-            {/* <MapView style={styles.map} /> */}
+            {/* <MapView style={styles.map}
+                {erosions_db.forEach((element, index) =>
+
+                (
+                    <Marker
+                        key={index}
+                        coordinate={{
+                            latitude: element.latitude,
+                            longitude: element.longitude
+                        }}
+                        title={element.title}
+                    />
+                ))}
+            /> */}
 
         </View>
     );
 }
 
-export default App;
+export default Map;
 
 const styles = StyleSheet.create({
     container: {
