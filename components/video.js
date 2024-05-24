@@ -8,6 +8,8 @@
 //Bibliothèques
 ////////////////////////////////////////////////
 import { StyleSheet, Text, View, Dimensions } from 'react-native';
+import { WebView } from 'react-native-webview';
+
 ////////////////////////////////////////////////
 //Composants
 ////////////////////////////////////////////////
@@ -21,8 +23,10 @@ const VideoComponent = ({ url,title }) => {
         <View style={styles.container}>
             <Text style={styles.title}>{title}</Text>
             <View style={styles.video}>
-                <iframe width={Dimensions.get('window').width - 100} height={Dimensions.get('window').height / 3} src={url} title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen />
-
+            <WebView
+                    style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height / 10 }}
+                    source={{ uri: url }}
+                />
             </View>
         </View>
     );

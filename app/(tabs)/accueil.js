@@ -1,83 +1,52 @@
-////////////////////////////////////////////////
-// Municipalité des îles-de-la-Madeleine
-// Auteur :Iohann Paquette
-// Date : 2024-05-07 
-////////////////////////////////////////////////
-
-////////////////////////////////////////////////
-//Bibliothèques
-////////////////////////////////////////////////
-import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, Image, FlatList, Dimensions } from 'react-native';
-import {
-    getAuth
-
-} from 'firebase/auth';
-import { useNavigation } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, FlatList, Linking } from 'react-native';
+import { getAuth } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
-import { Fade } from "react-slideshow-image";
-
-////////////////////////////////////////////////
-//Components
-////////////////////////////////////////////////
-import { liste_url_videos } from '../../BD_VIDEOS'
-import VideoComponent from '../../components/video'
+import { liste_url_videos } from '../../BD_VIDEOS';
+import VideoComponent from '@/components/video';
 import FormButton from '@/components/FormButton';
-import Popup from '../../components/Popup';
-import {slides} from '../../slides'
-////////////////////////////////////////////////
-//App
-////////////////////////////////////////////////
-export default function Home() {
-    const auth = getAuth()
-    const navigation = useNavigation();
-    const db = getFirestore()
-    const [userInfo, setUserInfo] = useState()
-    const [formationEffectue, setFormationDone] = useState(false)
+import Slideshow from '@/components/Slideshow';
+import { useLocalSearchParams } from "expo-router";
 
-    //Popup
-    const [textModal, setTextModal] = useState('');
-    const [modalVisible, setModalVisible] = useState(false);
+export default function Home() {
+    const auth = getAuth();
+    const navigation = useNavigation();
+    const db = getFirestore();
+    const [userInfo, setUserInfo] = useState();
+    const [formationEffectue, setFormationDone] = useState(false);
+    const { done } = useLocalSearchParams();
 
     const getUserInfo = async () => {
         await getDoc(doc(db, 'Users', auth.currentUser.uid))
             .then((res) => {
-                setUserInfo(res.data())
-                console.log(res.data().FormationEffectue)
-                if (res.data().FormationEffectue == true) {
-                    setFormationDone(true)
-
-                }
+                setUserInfo(res.data());
+                console.log(res.data().FormationEffectue);
+                if (res.data().FormationEffectue) setFormationDone(true);
             })
             .catch((err) => {
-                console.log(err)
-            })
-    }
-    const zoomOutProperties = {
-        duration: 5000,
-        transitionDuration: 500,
-        infinite: true,
-        indicators: true,
-        scale: 0.4,
-        arrows: true
-      };
+                console.log(err);
+            });
+    };
 
     useEffect(() => {
-        if (!auth.currentUser)
-            navigation.navigate('index')
-        else
-            getUserInfo()
-    }, [auth])
+        if (!auth.currentUser) navigation.navigate('index');
+        else getUserInfo();
+    }, [auth, done]);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-
-            {/* Si n'a pas fait sa formation encore */}
             {!formationEffectue && (
-                <FormButton
-                    buttonTitle={'Commencer ma formation éco-énergétique'}
-                    onPress={() => navigation.navigate('formation')}
-                />
+                <View style={{ alignItems: 'center' }}>
+                    <FormButton
+                        buttonTitle={'Commencer ma formation éco-énergétique'}
+                        onPress={() => navigation.navigate('formation')}
+                    />
+                    <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+                        Les questions suivantes nous permettrons de construire un suivi et
+                        de vous permettre de réduire votre emprunte environnementale
+                    </Text>
+                </View>
             )}
 
             {formationEffectue && (
@@ -117,40 +86,25 @@ export default function Home() {
                     <View style={styles.section}>
                         <Text style={styles.undertitle}>Déchets</Text>
                         <Text style={styles.text}>
-                            Ne mettez jamais de produits dangereux dans votre bac noir, 
-                            
-                            <a href='https://www.muniles.ca/services-aux-citoyens/matieres-residuelles/ecocentre-et-points-de-depots/'>ils doivent être disposés correctement aux endroits appropriés.</a>
+                            Ne mettez jamais de produits dangereux dans votre bac noir,
+                            <Text onPress={() => Linking.openURL('https://www.muniles.ca/services-aux-citoyens/matieres-residuelles/ecocentre-et-points-de-depots/')}>
+                                ils doivent être disposés correctement aux endroits appropriés.
+                            </Text>
                         </Text>
                     </View>
+                    <Slideshow />
+                    <Text style={styles.title}>Vidéo écolo-éducatives</Text>
+
+                    <FlatList
+                        data={liste_url_videos}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={({ item }) => <VideoComponent url={item.url} title={item.title} />}
+                    />
                 </View>
             )}
-
-            {/* image slide-show */}
-            {/* <View>
-            <div className="slide-container">
-                <Fade {...zoomOutProperties}>
-                    {slides.map((each, index) => (
-                        <Image source={{uri:each}} id={index} width={200} height={200} resizeMethod='contain'/>
-                    ))}
-                </Fade>
-                </div>
-            </View> */}
-
-            <Text style={styles.title}>Vidéo écolo-éducatives</Text>
-
-            {/* Liste des différentes vidéos */}
-            <FlatList
-                data={liste_url_videos}
-                renderItem={(item) => {
-                    return (
-                        <VideoComponent url={item.item.url} title={item.item.title} />
-                    )
-                }}
-            />
         </ScrollView>
-    )
+    );
 }
-
 
 const styles = StyleSheet.create({
     container: {
@@ -158,6 +112,7 @@ const styles = StyleSheet.create({
         padding: 16,
         justifyContent: 'center',
         backgroundColor: '#f9f9f9',
+        marginTop: 40,
     },
     title: {
         fontSize: 24,
@@ -179,5 +134,5 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 10,
         color: '#555',
-    }
+    },
 });

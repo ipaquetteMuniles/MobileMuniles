@@ -1,11 +1,11 @@
 ////////////////////////////////////////////////
 // Municipalité des îles-de-la-Madeleine
-// Auteur :Iohann Paquette
+// Auteur : Iohann Paquette
 // Date : 2024-05-07 
 ////////////////////////////////////////////////
 
 ////////////////////////////////////////////////
-//Bibliothèques
+// Bibliothèques
 ////////////////////////////////////////////////
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState, useContext, createContext } from 'react';
@@ -17,7 +17,9 @@ import { useNavigation } from 'expo-router';
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged, getReactNativePersistence, initializeAuth } from "firebase/auth";
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+
 ////////////////////////////////////////////////
 
 export const firebaseConfig = {
@@ -32,7 +34,9 @@ export const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app)
+export const auth = initializeAuth(app,{
+  persistence:getReactNativePersistence(ReactNativeAsyncStorage)
+})
 export const UserContext = createContext();
 
 export default function TabLayout() {
@@ -41,24 +45,31 @@ export default function TabLayout() {
   const navigation = useNavigation();
 
   useEffect(() => {
+    // Set auth persistence to local storage
+
+    // Auth state listener
     onAuthStateChanged(auth, (utilisateur) => {
       if (utilisateur) {
-
         if (utilisateur.emailVerified) {
           setConnection(true);
-          navigation.navigate("accueil")
+          navigation.navigate("accueil");
         }
-
-
+      } else {
+        setConnection(false);
       }
-    });
-  }, [auth])
+    })
+
+  }, []);
 
   return (
     <UserContext.Provider value={{ isconnected, setConnection }}>
       <Tabs
+
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          tabBarActiveTintColor: '#060270',
+          tabBarInactiveTintColor: '#8e8e93',
+          tabBarActiveBackgroundColor: '#f9f9f9',
+          tabBarStyle: { backgroundColor: '#f9f9f9' },
           headerShown: false,
         }}>
 
@@ -76,7 +87,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="signup"
           options={{
-            title: 'signup',
+            title: 'Signup',
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon name={focused ? 'person' : 'person-sharp'} color={color} />
             ),
@@ -96,7 +107,6 @@ export default function TabLayout() {
           }}
         />
 
-        
         <Tabs.Screen
           name="map"
           options={{

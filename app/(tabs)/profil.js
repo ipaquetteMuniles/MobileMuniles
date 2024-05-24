@@ -33,6 +33,7 @@ import { UserContext, firebaseConfig } from './_layout';
 import FormButton from '@/components/FormButton';
 import FormInput from '@/components/FormInput';
 import Popup from '@/components/Popup';
+import Loading from '@/components/loadingComponent'
 ////////////////////////////////////////////////
 // App
 ////////////////////////////////////////////////
@@ -60,6 +61,8 @@ const Profil = () => {
 
     const [confirmPassword, setConfirmPassword] = useState("")
     const [showDelete, setShowDelete] = useState(false)
+
+    const [loading,setLoading] = useState(false);
 
     //popup
     const [textModal, setTextModal] = useState("");
@@ -200,6 +203,8 @@ const Profil = () => {
     const DeleteAccount = async () => {
 
         try {
+            setLoading(true);
+
             setShowDelete(false)
 
             reconnexion()
@@ -219,7 +224,10 @@ const Profil = () => {
                 .catch((err) => console.log(err))
 
             Deconnexion()
+            setLoading(false);
+
             navigation.navigate('index')
+
 
         }
         catch (err) {
@@ -238,8 +246,15 @@ const Profil = () => {
         if (!auth.currentUser)
             navigation.navigate('index')
         else
-            loadUser()
+        {
+            setLoading(true);
+            loadUser();
+            setLoading(false)
+        }
     }, [auth.currentUser])
+
+    if(loading)
+        return <Loading />
 
     return (
         <ScrollView contentContainerStyle={styles.container}>

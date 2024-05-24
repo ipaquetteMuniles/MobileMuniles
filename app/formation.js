@@ -11,7 +11,7 @@ import { StyleSheet, Text, View, Dimensions } from 'react-native';
 import React, { useState } from 'react';
 import { getFirestore, updateDoc } from 'firebase/firestore';
 import { doc,setDoc } from 'firebase/firestore';
-import { useNavigation } from 'expo-router';
+import { useNavigation,Link,useRouter, useLocalSearchParams } from 'expo-router';
 
 ////////////////////////////////////////////////
 //Composants
@@ -36,6 +36,7 @@ const Formation = () => {
     const auth = getAuth()
 
     const navigation = useNavigation();
+    const router = useRouter();
 
     const handleAnswer = async(answer) => {
         const updatedAnswers = [...answers, { 
@@ -62,6 +63,8 @@ const Formation = () => {
             await updateDoc(doc(db,'Users',auth.currentUser.uid),{
                 FormationEffectue:true,
             })
+
+            router.push({ params: { done: true } });
         }
     };
 
@@ -70,8 +73,8 @@ const Formation = () => {
           <View style={styles.questionContainer}>
             <Text style={styles.questionText}>{question}</Text>
             <View style={styles.buttonContainer}>
-              <FormButton buttonTitle="Yes" onPress={() => onAnswer(true)} />
-              <FormButton buttonTitle="No" onPress={() => onAnswer(false)} />
+              <FormButton buttonTitle="Oui" onPress={() => onAnswer(true)} />
+              <FormButton buttonTitle="Non" onPress={() => onAnswer(false)} />
             </View>
           </View>
         );
@@ -79,14 +82,7 @@ const Formation = () => {
 
     return (
         <View style={styles.container}>
-            {/* premiere question */}
-            {currentQuestionIndex == 0 && (
-                <Text style={{fontSize: 24,fontWeight:'bold'}}>
-                    Les questions suivantes nous permettrons de construire un suivi et
-                    de vous permettre de réduire votre emprunte environnementale
-                </Text>
-            )}
-
+           
             {!finish ? (
                 <QuestionComponent
                     question={questions[currentQuestionIndex].question}
@@ -95,10 +91,12 @@ const Formation = () => {
             ) : (
                 <View>
                     <Text style={styles.endText}>Merci d'avoir répondu aux questions de la formation</Text>
-                    <FormButton
-                        buttonTitle="Retour"
-                        onPress={()=>navigation.navigate("accueil")}
-                    />
+                    
+                        <FormButton
+                            buttonTitle="Retour"
+                            onPress={()=>navigation.navigate("accueil",{done:true})}
+                        />
+                   
                 </View>
             )}
         </View>

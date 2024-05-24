@@ -8,7 +8,7 @@
 //Bibliothèques
 ////////////////////////////////////////////////
 import { StyleSheet, Text, View } from 'react-native';
-// import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 
 ////////////////////////////////////////////////
 //Composants
@@ -20,10 +20,17 @@ import { erosions_db } from '../../EROSIONS_DB'
 const Map = () => {
     return (
         <View style={styles.container}>
-            {/* <MapView style={styles.map}
-                {erosions_db.forEach((element, index) =>
-
-                (
+            <MapView 
+                style={styles.map}
+                showsUserLocation
+                initialRegion={{
+                    longitude:erosions_db[0].longitude,
+                    latitude:erosions_db[0].latitude,
+                    latitudeDelta:0.001,
+                    longitudeDelta:0.01
+                }}
+            >
+                {erosions_db.map((element, index) => (
                     <Marker
                         key={index}
                         coordinate={{
@@ -33,7 +40,7 @@ const Map = () => {
                         title={element.title}
                     />
                 ))}
-            /> */}
+            </MapView>
 
         </View>
     );

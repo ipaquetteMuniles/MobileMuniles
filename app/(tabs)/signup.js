@@ -22,6 +22,7 @@ import FormButton from '../../components/FormButton';
 import FormInput from '../../components/FormInput';
 import Popup from '../../components/Popup';
 import { UserContext } from './_layout';
+import Loading from '@/components/loadingComponent';
 ////////////////////////////////////////////////
 //App
 ////////////////////////////////////////////////
@@ -39,6 +40,8 @@ export default function Signup() {
     //Popup
     const [textModal, setTextModal] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
+
+    const [loading,setLoading] = useState(false);
 
     //firebase
     const auth = getAuth();
@@ -58,6 +61,8 @@ export default function Signup() {
         } else {
             createUserWithEmailAndPassword(auth, courriel, mdp)
                 .then((userCredential) => {
+                    setLoading(true);
+
                     // Signed in
                     const user = userCredential.user;
                     //update db
@@ -78,6 +83,8 @@ export default function Signup() {
                         navigation.navigate('accueil',{reload:true})
                     })
                     .catch((err)=>console.log(err))
+
+                    setLoading(false);
                 })
                 .catch((error) => {
                     const errorMessage = error.message;
@@ -110,6 +117,9 @@ export default function Signup() {
         .then(()=> console.log('DB updated'))
         .catch((err)=> console.log(err))
     }
+
+    if(loading)
+        return <Loading />
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -181,6 +191,8 @@ const styles = StyleSheet.create({
         padding: 16,
         justifyContent: 'center',
         backgroundColor: '#f9f9f9',
+        marginTop:40,
+        marginBottom:40
     },
     title: {
         fontSize: 24,

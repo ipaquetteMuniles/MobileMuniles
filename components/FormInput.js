@@ -29,6 +29,7 @@ const FormInput = ({ label, placeholder, useState, valueUseState, secureTextEntr
                 blurOnSubmit
                 secureTextEntry={secureTextEntry}
                 inputMode={inputMode}
+                
                 {...rest}
             />
         </View>

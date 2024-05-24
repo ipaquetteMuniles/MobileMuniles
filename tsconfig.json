@@ -17,5 +17,5 @@
     "app/(tabs)/index.js",
     "components/FormInput.js",
     "app/(tabs)/profil.js",
-    "app/(tabs)/signup.js", "app/(tabs)/accueil.js"  ]
+    "app/(tabs)/signup.js", "app/(tabs)/accueil.js", "app/(tabs)/_layout.js"  ]
 }
