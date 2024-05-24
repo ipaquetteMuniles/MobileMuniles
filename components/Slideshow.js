@@ -2,7 +2,7 @@
 //Bibliothèques
 ////////////////////////////////////////////////
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Image, Animated, Dimensions, StyleSheet,Text } from 'react-native';
+import { View, Image, Animated, Dimensions, StyleSheet,Text, ActivityIndicator } from 'react-native';
 import { useAssets } from 'expo-asset';
 import {slides} from '../slides'
 const { width } = Dimensions.get('window');
@@ -21,7 +21,7 @@ const Slideshow = () => {
       setCurrentIndex((prevIndex) =>
         prevIndex === slides.length - 1 ? 0 : prevIndex + 1
       );
-    }, 3000); // Change slide every 3 seconds
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -37,7 +37,7 @@ const Slideshow = () => {
     // Display loading indicator or handle error
     return (
       <View style={styles.container}>
-        <Text>Loading...</Text>
+        <ActivityIndicator animating={true} />
       </View>
     );
   }
@@ -46,7 +46,7 @@ const Slideshow = () => {
     <View style={styles.container}>
       <Animated.View style={[styles.slider, { transform: [{ translateX }] }]}>
         {images.map((image, index) => (
-          <Image key={index} source={image} style={styles.image}/>
+          <Image key={index} source={image} style={styles.image} resizeMode='contain'/>
         ))}
       </Animated.View>
     </View>
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: width,
-    height: 300,
+    height: Dimensions.get('screen').height / 2,
   },
 });
 

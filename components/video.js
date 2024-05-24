@@ -38,6 +38,7 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         justifyContent: 'center',
+        margin:20
     },
     video: {
         alignSelf: 'center',
@@ -45,7 +46,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 24,
+        margin: 24,
         textAlign: 'center',
         color: '#333',
     }

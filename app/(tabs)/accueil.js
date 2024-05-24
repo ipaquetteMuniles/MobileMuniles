@@ -18,33 +18,37 @@ export default function Home() {
     const { done } = useLocalSearchParams();
 
     const getUserInfo = async () => {
-        await getDoc(doc(db, 'Users', auth.currentUser.uid))
-            .then((res) => {
-                setUserInfo(res.data());
-                console.log(res.data().FormationEffectue);
-                if (res.data().FormationEffectue) setFormationDone(true);
-            })
-            .catch((err) => {
-                console.log(err);
-            });
+        try {
+            const docSnap = await getDoc(doc(db, 'Users', auth.currentUser.uid));
+            if (docSnap.exists()) {
+                setUserInfo(docSnap.data());
+                if (docSnap.data().FormationEffectue) {
+                    setFormationDone(true);
+                }
+            }
+        } catch (err) {
+            console.log(err);
+        }
     };
 
     useEffect(() => {
-        if (!auth.currentUser) navigation.navigate('index');
-        else getUserInfo();
+        if (!auth.currentUser) {
+            navigation.navigate('index');
+        } else {
+            getUserInfo();
+        }
     }, [auth, done]);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {!formationEffectue && (
-                <View style={{ alignItems: 'center' }}>
+                <View style={styles.centeredView}>
                     <FormButton
-                        buttonTitle={'Commencer ma formation éco-énergétique'}
+                        buttonTitle="Commencer ma formation éco-énergétique"
                         onPress={() => navigation.navigate('formation')}
                     />
-                    <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
-                        Les questions suivantes nous permettrons de construire un suivi et
-                        de vous permettre de réduire votre emprunte environnementale
+                    <Text style={styles.introText}>
+                        Les questions suivantes nous permettrons de construire un suivi et de vous permettre de réduire votre emprunte environnementale
                     </Text>
                 </View>
             )}
@@ -52,7 +56,6 @@ export default function Home() {
             {formationEffectue && (
                 <View>
                     <Text style={styles.title}>Conseil et astuces</Text>
-
                     <View style={styles.section}>
                         <Text style={styles.undertitle}>Compostage</Text>
                         <Text style={styles.text}>
@@ -87,19 +90,24 @@ export default function Home() {
                         <Text style={styles.undertitle}>Déchets</Text>
                         <Text style={styles.text}>
                             Ne mettez jamais de produits dangereux dans votre bac noir,
-                            <Text onPress={() => Linking.openURL('https://www.muniles.ca/services-aux-citoyens/matieres-residuelles/ecocentre-et-points-de-depots/')}>
+                            <Text style={styles.link} onPress={() => Linking.openURL('https://www.muniles.ca/services-aux-citoyens/matieres-residuelles/ecocentre-et-points-de-depots/')}>
                                 ils doivent être disposés correctement aux endroits appropriés.
                             </Text>
                         </Text>
                     </View>
-                    <Slideshow />
-                    <Text style={styles.title}>Vidéo écolo-éducatives</Text>
 
-                    <FlatList
-                        data={liste_url_videos}
-                        keyExtractor={(item, index) => index.toString()}
-                        renderItem={({ item }) => <VideoComponent url={item.url} title={item.title} />}
-                    />
+                    <View>
+                        <Slideshow />
+                    </View>
+                    <View>
+                        <Text style={styles.title}>Vidéo écolo-éducatives</Text>
+                        <FlatList
+                            style={styles.flatList}
+                            data={liste_url_videos}
+                            keyExtractor={(item, index) => index.toString()}
+                            renderItem={({ item }) => <VideoComponent url={item.url} title={item.title} />}
+                        />
+                    </View>
                 </View>
             )}
         </ScrollView>
@@ -110,9 +118,18 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 16,
-        justifyContent: 'center',
         backgroundColor: '#f9f9f9',
         marginTop: 40,
+    },
+    centeredView: {
+        alignItems: 'center',
+    },
+    introText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginVertical: 20,
+        color: '#333',
     },
     title: {
         fontSize: 24,
@@ -134,5 +151,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 10,
         color: '#555',
+    },
+    link: {
+        color: 'blue',
+    },
+    flatList: {
+        margin: 20,
     },
 });

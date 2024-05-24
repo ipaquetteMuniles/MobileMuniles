@@ -12,7 +12,7 @@ import React, { useState } from 'react';
 import { getFirestore, updateDoc } from 'firebase/firestore';
 import { doc,setDoc } from 'firebase/firestore';
 import { useNavigation,Link,useRouter, useLocalSearchParams } from 'expo-router';
-
+import {questions} from '../Questions'
 ////////////////////////////////////////////////
 //Composants
 ////////////////////////////////////////////////
@@ -22,11 +22,7 @@ import { getAuth } from 'firebase/auth';
 // App
 ////////////////////////////////////////////////
 const Formation = () => {
-    const questions = [
-        { id: 1, question: 'Possèdez-vous une ou plusieurs voitures ?' },
-        { id: 2, question: 'Possèdez-vous un ou plusieurs vélos' },
-        { id: 3, question: 'Êtes-vous résident des îles-de-la-Madeleine ?' },
-    ];
+    
 
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState([]);
