@@ -17,13 +17,13 @@ import {
     verifyBeforeUpdateEmail,
     updateProfile,
     updatePhoneNumber,
-    PhoneAuthProvider
+    PhoneAuthProvider,
+    deleteUser
 }
     from 'firebase/auth';
 import { useNavigation } from 'expo-router';
-import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore';
 import { useContext, useEffect, useState, useRef } from 'react';
-import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import PhoneInput from 'react-native-phone-input'
 
 ////////////////////////////////////////////////
@@ -57,6 +57,9 @@ const Profil = () => {
     const [initialEmail, setInitialEmail] = useState("");
     const [initialDisplayName, setInitialDisplayName] = useState("");
     const [initialPhone, setInitialPhone] = useState("");
+
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [showDelete, setShowDelete] = useState(false)
 
     //popup
     const [textModal, setTextModal] = useState("");
@@ -114,12 +117,19 @@ const Profil = () => {
             .catch((err) => console.log(err))
     }
 
+    const reconnexion = async () => {
+        const credential = EmailAuthProvider.credential(auth.currentUser.email, confirmPassword);
+
+        await reauthenticateWithCredential(auth.currentUser, credential)
+            .then((res) => console.log('reauth success'))
+            .catch((err) => console.log(err))
+
+    }
+
     const changeEmail = async () => {
-        const credential = EmailAuthProvider.credential(auth.currentUser.email, password);
 
         try {
-            await reauthenticateWithCredential(auth.currentUser, credential)
-                .then(() => console.log('reauth success'))
+            reconnexion()
 
             await verifyBeforeUpdateEmail(auth.currentUser, email)
                 .then(() => console.log('email sented'))
@@ -187,6 +197,36 @@ const Profil = () => {
         }
     };
 
+    const DeleteAccount = async () => {
+
+        try {
+            setShowDelete(false)
+
+            reconnexion()
+
+            //supprimer l'utilisateur
+            await deleteDoc(doc(db, 'Users', auth.currentUser.uid))
+                .then(() => console.log('compte supprime de la bd'))
+                .catch((err) => console.log(err))
+
+            //supprimer la formation de l'utilisateur
+            await deleteDoc(doc(db, 'Formation', auth.currentUser.uid))
+                .then(() => console.log('formation supprime de la bd'))
+                .catch((err) => console.log(err))
+
+            await deleteUser(auth.currentUser)
+                .then(() => console.log("Compte detruit"))
+                .catch((err) => console.log(err))
+
+            Deconnexion()
+            navigation.navigate('index')
+
+        }
+        catch (err) {
+            console.log(err)
+        }
+    }
+
 
     const resetUser = () => {
         setDisplayName("")
@@ -204,10 +244,7 @@ const Profil = () => {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {/* user enter recaptcha */}
-            {/* <FirebaseRecaptchaVerifierModal
-                ref={recaptchaVerifier}
-                firebaseConfig={firebaseConfig}
-            /> */}
+
             {/* si l'utilisateur */}
             {auth.currentUser && (
                 <View>
@@ -265,9 +302,9 @@ const Profil = () => {
 
                     <View>
                         <View style={styles.field}>
-                            <Text style={styles.label}>Numéro de téléphone {phone}</Text>
+                            <Text style={styles.label}>Numéro de téléphone: {phone}</Text>
 
-                            <PhoneInput
+                            {/* <PhoneInput
                                 style={{
                                     margin: 10,
                                     width: '90%',
@@ -280,9 +317,9 @@ const Profil = () => {
                                 countriesList={require('../../countries.json')}
                                 initialCountry='ca'
                                 onChangePhoneNumber={setPhone}
-                            />
+                            /> */}
                         </View>
-                        {initialPhone !== phone && (
+                        {/* {initialPhone !== phone && (
                             <View style={{ margin: 10 }}>
                                 <FormButton
                                     buttonTitle={'Changer le téléphone'}
@@ -306,7 +343,7 @@ const Profil = () => {
                                     </View>
                                 )}
                             </View>
-                        )}
+                        )} */}
                     </View>
                 </View>
             )}
@@ -317,6 +354,34 @@ const Profil = () => {
                 color='white'
                 onPress={Deconnexion}
             />
+
+            <FormButton
+                buttonTitle={'Supprimer mon compte'}
+                backgroundColor='red'
+                color='white'
+                onPress={() => setShowDelete(true)}
+            />
+
+            {showDelete && (
+
+                <View style={{ margin: 10 }}>
+                    <FormInput
+                        secureTextEntry
+                        placeholder={'###'}
+                        label={'Mot de passe pour supprimer le compte'}
+                        useState={setConfirmPassword}
+                        valueUseState={confirmPassword}
+
+                    />
+                    <FormButton
+                        buttonTitle={'Supprimer le compte'}
+                        onPress={DeleteAccount}
+                        backgroundColor='#5B9943'
+
+                    />
+                </View>
+
+            )}
 
             <FormButton
                 buttonTitle={'Changer le mot de passe'}

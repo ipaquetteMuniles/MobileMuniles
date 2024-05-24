@@ -70,7 +70,7 @@ const Popup = ({text,fct=null,fctText=null,setModalVisible,modalVisible,onCloseF
                 backgroundColor:'red'
               }}>
               <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
-                <Text style={{color:'white'}}>Close</Text>
+                <Text style={{color:'white'}}>Fermer</Text>
               </TouchableOpacity>
             </View>
           </View>

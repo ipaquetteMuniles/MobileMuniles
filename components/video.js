@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
     },
     title: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 24,
         textAlign: 'center',

@@ -62,6 +62,8 @@ export default function Signup() {
                     const user = userCredential.user;
                     //update db
                     updateDBUser(user)
+
+                    resetField()
                     
                     //sending confirmation email
                     sendEmailVerification(user)
@@ -73,7 +75,7 @@ export default function Signup() {
                     .then(()=>{
                         console.log('login sucessful')
                         setConnection(true)
-                        navigation.navigate('accueil')
+                        navigation.navigate('accueil',{reload:true})
                     })
                     .catch((err)=>console.log(err))
                 })
@@ -85,6 +87,15 @@ export default function Signup() {
         }
     };
 
+    const resetField = () =>{
+        setCourriel("")
+        setMdp("")
+        setConfirm("")
+        setLastName("")
+        setFirstName("")
+        setPhone("")
+    }
+
     const updateDBUser = async(user)=>{
         await setDoc(doc(db,"Users",user.uid),{
             uid : user.uid,
@@ -93,7 +104,8 @@ export default function Signup() {
             displayName: firstname +' '+ lastname,
             phoneNumber:phone,
             photoURL:user.photoURL,
-            points:0
+            points:0,
+            FormationEffectue:false
         })
         .then(()=> console.log('DB updated'))
         .catch((err)=> console.log(err))
