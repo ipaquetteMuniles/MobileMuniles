@@ -6,6 +6,8 @@ export default function AppLayout() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="resetPassword" options={{ headerShown: false }} />
       <Stack.Screen name="formation" options={{ headerShown: false }} />
+      <Stack.Screen name="emailVerification" options={{ headerShown: false }} />
+
     </Stack>
   );
 }

@@ -16,7 +16,7 @@ import { StyleSheet, Text, View, TextInput } from 'react-native';
 ////////////////////////////////////////////////////
 //                  FormInput                       //
 ////////////////////////////////////////////////////
-const FormInput = ({ label, placeholder, useState, valueUseState, secureTextEntry = false, inputMode = 'text',rest }) => {
+const FormInput = ({ label, placeholder, useState, valueUseState, secureTextEntry = false, inputMode = 'text',onSubmitEditing=null }) => {
     return (
         <View style={styles.field}>
             <Text style={styles.label}>{label}</Text>
@@ -29,8 +29,8 @@ const FormInput = ({ label, placeholder, useState, valueUseState, secureTextEntr
                 blurOnSubmit
                 secureTextEntry={secureTextEntry}
                 inputMode={inputMode}
-                
-                {...rest}
+                returnKeyType='done'
+                onSubmitEditing={onSubmitEditing}
             />
         </View>
     );

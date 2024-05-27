@@ -33,8 +33,7 @@ export default function Signup() {
     const [courriel, setCourriel] = useState('');
     const [mdp, setMdp] = useState('');
     const [confirm, setConfirm] = useState('');
-    const [firstname, setFirstName] = useState('');
-    const [lastname, setLastName] = useState('');
+    const [Name, setName] = useState('');
     const [phone, setPhone] = useState('');
 
     //Popup
@@ -52,7 +51,7 @@ export default function Signup() {
     const navigation = useNavigation();
 
     const createAccount = () => {
-        if (!courriel || !mdp || !confirm || !lastname || !phone) {
+        if (!courriel || !mdp || !confirm || !phone) {
             setTextModal('Assurez-vous d\'avoir complété tous les champs du formulaire');
             setModalVisible(true);
         } else if (confirm !== mdp) {
@@ -80,7 +79,7 @@ export default function Signup() {
                     .then(()=>{
                         console.log('login sucessful')
                         setConnection(true)
-                        navigation.navigate('accueil',{reload:true})
+                        navigation.navigate("emailVerification")
                     })
                     .catch((err)=>console.log(err))
 
@@ -98,8 +97,7 @@ export default function Signup() {
         setCourriel("")
         setMdp("")
         setConfirm("")
-        setLastName("")
-        setFirstName("")
+        setName("")
         setPhone("")
     }
 
@@ -108,7 +106,7 @@ export default function Signup() {
             uid : user.uid,
             email:user.email,
             emailVerified:false,
-            displayName: firstname +' '+ lastname,
+            displayName: Name,
             phoneNumber:phone,
             photoURL:user.photoURL,
             points:0,
@@ -132,16 +130,10 @@ export default function Signup() {
                 inputMode="email"
             />
             <FormInput
-                label="Prénom"
+                label="Prénom et nom"
                 placeholder="Prénom.."
-                useState={setFirstName}
-                valueUseState={firstname}
-            />
-            <FormInput
-                label="Nom"
-                placeholder="Nom de famille.."
-                useState={setLastName}
-                valueUseState={lastname}
+                useState={setName}
+                valueUseState={Name}
             />
 
             <View style={styles.field}>

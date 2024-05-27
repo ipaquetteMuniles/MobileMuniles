@@ -14,6 +14,16 @@
   "jest": {
     "preset": "jest-expo"
   },
+  "ios": {
+    "infoPlist": {
+      "UIBackgroundModes": [
+        "location",
+        "fetch",
+        "remote-notification"
+      ],
+      "NSLocationWhenInUseUsageDescription": "La localisation est essentielle pour vous guidez et vous avertir en cas d'érosion"
+    }
+  },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
     "@react-native-async-storage/async-storage": "^1.23.1",
@@ -25,12 +35,17 @@
     "expo-av": "~14.0.5",
     "expo-constants": "~16.0.1",
     "expo-dev-client": "~4.0.14",
+    "expo-device": "~6.0.2",
     "expo-font": "~12.0.5",
     "expo-linking": "~6.3.1",
+    "expo-location": "~17.0.1",
+    "expo-notifications": "~0.28.3",
     "expo-router": "~3.5.14",
+    "expo-sensors": "~13.0.7",
     "expo-splash-screen": "~0.27.4",
     "expo-status-bar": "~1.12.1",
     "expo-system-ui": "~3.0.4",
+    "expo-task-manager": "~11.8.1",
     "expo-web-browser": "~13.0.3",
     "firebase": "^10.12.1",
     "react": "18.2.0",

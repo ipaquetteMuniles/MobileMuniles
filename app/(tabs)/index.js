@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////
 import { useState, useContext, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
-import { sendEmailVerification, signInWithEmailAndPassword  } from "firebase/auth";
+import { sendEmailVerification, signInWithEmailAndPassword } from "firebase/auth";
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from 'expo-router';
 
@@ -19,7 +19,7 @@ import { useNavigation } from 'expo-router';
 
 import FormButton from '@/components/FormButton';
 import FormInput from '@/components/FormInput';
-import { UserContext,auth} from './_layout';
+import { UserContext, auth } from './_layout';
 import Popup from '@/components/Popup';
 import { getFirestore, updateDoc, doc } from 'firebase/firestore';
 
@@ -45,28 +45,19 @@ export default function LoginScreen() {
 
         signInWithEmailAndPassword(auth, courriel, mdp)
             .then((userCredential) => {
-                //si le courriel n'a pas été validé
-                if (!auth.currentUser.emailVerified) {
-                    setTextModal('La confirmation par courriel doit être validée')
-                    setModalVisible(true)
 
-                    //renvoyer le courriel de confirmation
-                    // sendEmailVerification(auth)
-                    // .catch((err)=>console.log(err))
-                }
-                else {
-                    // Signed in 
-                    const user = userCredential.user;
-                    setConnection(true)
-                    navigation.navigate('accueil')
+                // Signed in 
+                const user = userCredential.user;
+                setConnection(true)
+                navigation.navigate('accueil')
 
-                    //update the email.verified
-                    updateDoc(doc(db, 'Users', user.uid), {
-                        emailVerified: true
-                    })
-                        .then(() => console.log('email verified updated'))
-                        .catch((err) => console.log(err))
-                }
+                //update the email.verified
+                updateDoc(doc(db, 'Users', user.uid), {
+                    emailVerified: true
+                })
+                    .then(() => console.log('email verified updated'))
+                    .catch((err) => console.log(err))
+
 
             })
             .catch((error) => {
@@ -77,10 +68,10 @@ export default function LoginScreen() {
             });
     }
 
-    useEffect(()=>{
-        if(auth.currentUser)
+    useEffect(() => {
+        if (auth.currentUser)
             navigation.navigate('accueil')
-    },[auth])
+    }, [auth])
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -111,7 +102,7 @@ export default function LoginScreen() {
             <FormButton onPress={connect} buttonTitle={'Connexion'} />
 
             {/* mot de passe oublié */}
-            <FormButton onPress={()=>navigation.navigate("resetPassword")} buttonTitle={'Mot de passe oublié'} />
+            <FormButton onPress={() => navigation.navigate("resetPassword")} buttonTitle={'Mot de passe oublié'} />
 
             <Popup text={textModal} setModalVisible={setModalVisible} modalVisible={modalVisible} />
 
@@ -125,7 +116,7 @@ const styles = StyleSheet.create({
         padding: 16,
         justifyContent: 'center',
         backgroundColor: '#f9f9f9',
-        marginTop:40,
+        marginTop: 40,
     },
     field: {
         flex: 2,

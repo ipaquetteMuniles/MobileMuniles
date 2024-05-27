@@ -258,8 +258,7 @@ const Profil = () => {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            {/* user enter recaptcha */}
-
+            <Text style={styles.label}>Profil</Text>
             {/* si l'utilisateur */}
             {auth.currentUser && (
                 <View>

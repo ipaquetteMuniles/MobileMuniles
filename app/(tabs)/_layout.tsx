@@ -13,7 +13,7 @@ import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useNavigation } from 'expo-router';
-
+import * as Notifications from 'expo-notifications'
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
@@ -34,8 +34,8 @@ export const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = initializeAuth(app,{
-  persistence:getReactNativePersistence(ReactNativeAsyncStorage)
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
 })
 export const UserContext = createContext();
 
@@ -44,6 +44,16 @@ export default function TabLayout() {
   const [isconnected, setConnection] = useState(false);
   const navigation = useNavigation();
 
+  // Notifications
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+
   useEffect(() => {
     // Set auth persistence to local storage
 
@@ -51,11 +61,12 @@ export default function TabLayout() {
     onAuthStateChanged(auth, (utilisateur) => {
       if (utilisateur) {
         if (utilisateur.emailVerified) {
+          
           setConnection(true);
           navigation.navigate("accueil");
-        }
-      } else {
-        setConnection(false);
+        } 
+        else
+          navigation.navigate("emailVerification")
       }
     })
 
