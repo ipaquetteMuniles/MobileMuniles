@@ -12,12 +12,15 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, FlatList, Linking, Platform, Image, ActivityIndicator } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
 import { useLocalSearchParams } from "expo-router";
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
+import * as BackgroundFetch from 'expo-background-fetch';
+import * as TaskManager from 'expo-task-manager';
+
 import Constants from 'expo-constants'
-import { Pedometer } from 'expo-sensors';
+import { Pedometer, Accelerometer } from 'expo-sensors';
 import WebView from 'react-native-webview';
 ////////////////////////////////////////////////
 //Composants
@@ -44,15 +47,78 @@ export default function Home() {
 
     const [isPedometerAvailable, setIsPedometerAvailable] = useState('checking');
     const [pastStepCount, setPastStepCount] = useState(0);
-    const [nbKiloGesSauve, setKiloGes] = useState(0)
+    const [currentStepCount, setCurrentStepCount] = useState(0);
 
+    const [nbKiloGesSauve, setKiloGes] = useState(0)
+    const NB_PAS = 4930
     const [yearSelection, setYearSelection] = useState(2100)
+
+    //vélo
+    const G = 9.81;
+    const CYCLING_THRESHOLD = 0.5;
+    const STEP_DURATION = 0.1;
+    const [bycicleDistance, setBicycleDistance] = useState(0)
+    const [bycicleDuration, setBicycleDuration] = useState(0)
 
     const map_url_ocean_level = `https://coastal.climatecentral.org/embed/map/10/-61.5882/47.3635/?theme=sea_level_rise&map_type=year&basemap=roadmap&contiguous=true&elevation_model=best_available&forecast_year=${yearSelection}&pathway=ssp3rcp70&percentile=p50&return_level=return_level_1&rl_model=gtsr&slr_model=ipcc_2021_med`
     const map_erosion_uqar = `https://sigec.uqar.ca/portal/carto/view?mapId=3d421e35-1941-4940-aa94-9b4645cbb691`
     const [url, setUrl] = useState(map_url_ocean_level)
 
     const [loading, setLoading] = useState(false)
+
+    ////////////////////////////////////////////////
+    //Pédomètre
+    ////////////////////////////////////////////////
+
+
+    const PEDOMETER_TASK = 'PEDOMETER_TASK';
+    const CYCLING_TASK = 'TRACK_CYCLING';
+
+    // Register tasks
+    const registerTasks = async () => {
+        // Register the cycling task
+        await TaskManager.defineTask(CYCLING_TASK, async ({ data, error }) => {
+            if (error) {
+                console.log(error);
+                return;
+            }
+            if (data) {
+                calculateBicycleMovements();
+            }
+        });
+
+        // Register the pedometer task
+        await TaskManager.defineTask(PEDOMETER_TASK, async () => {
+            console.log('Pedometer task running');
+    
+            // Log the current and past step counts for debugging
+            console.log('Current step count:', currentStepCount);
+            console.log('Past step count:', pastStepCount);
+            if (pastStepCount >= 4906) {
+                console.log('Notifying user');
+                await sendNotification();
+                return BackgroundFetch.Result.NewData;
+            }
+            return BackgroundFetch.Result.NoData;
+        });
+    };
+
+    // Start tasks
+    const startTasks = async () => {
+        // Start pedometer task
+        await BackgroundFetch.registerTaskAsync(PEDOMETER_TASK, {
+            minimumInterval: 1, // 1 second for testing, adjust as needed
+            stopOnTerminate: false,
+            startOnBoot: true,
+        });
+
+        // Start accelerometer task
+        await BackgroundFetch.registerTaskAsync(CYCLING_TASK, {
+            minimumInterval: 1, // 1 second for testing, adjust as needed
+            stopOnTerminate: false,
+            startOnBoot: true,
+        });
+    };
 
     const subscribeToPedometer = async () => {
         const isAvailable = await Pedometer.isAvailableAsync();
@@ -67,10 +133,16 @@ export default function Home() {
             if (pastStepCountResult) {
                 setPastStepCount(pastStepCountResult.steps);
             }
+
         }
+        else
+            console.log('Pedometer is not available')
     };
 
-    const calculReductionGesMarche = () => {
+    const calculReductionGesMarche = async () => {
+        await Pedometer.watchStepCount(result => {
+            setCurrentStepCount(result.steps);
+        });
         /*
         Selon l'Agence de protection de l'environnement des États-Unis (EPA),
         la combustion d'un gallon d'essence produit environ 8,89 kg de dioxyde 
@@ -82,10 +154,79 @@ export default function Home() {
         litres pour parcourir 100 km, elle consommerait environ 0,47 litre pour parcourir 5 km. 
         Cela équivaut à environ 1,11 kg de CO2 évité pour chaque 5 km parcourus à pied plutôt qu'en voiture.
          */
+        let nbPas = currentStepCount;
+        let newPastStepCount = pastStepCount + nbPas;
+        setPastStepCount(newPastStepCount);
 
-        let nbPas = pastStepCount;
-        let nbKilometres = nbPas / 1000; // si chaque pas est 1 m
-        setKiloGes(Math.round(nbKilometres * 0.222)) // en se disant que 5 km économise 1,11 Kg
+        let nbKilometres = newPastStepCount / 500; // if each step is 0.5 m
+        setKiloGes((nbKilometres * 0.222).toFixed(2)); // assuming 5 km saves 1.11 kg of CO2
+    }
+
+    const calculateReductionGESBicycle = () =>{
+
+    }
+
+    const calculateBycicleMovements = async () => {
+        console.log('calculating bicycle ...');
+
+        let isCycling = false;
+        let cyclingStartTime = null;
+        let lastAcceleration = { x: 0, y: 0, z: 0 };
+        let distanceTraveled = 0;
+
+        Accelerometer.setUpdateInterval(STEP_DURATION * 1000);
+
+        const onAccelerometerData = ({ x, y, z }) => {
+            const acceleration = Math.sqrt(x ** 2 + y ** 2 + z ** 2) - G;
+
+            if (isCycling) {
+                // Estimate distance traveled based on acceleration
+                const deltaAcceleration = acceleration - lastAcceleration;
+                distanceTraveled += 0.5 * deltaAcceleration * (STEP_DURATION ** 2);
+            }
+
+            // Check if cycling movement is detected
+            if (!isCycling && acceleration > CYCLING_THRESHOLD) {
+                isCycling = true;
+                cyclingStartTime = Date.now();
+                //stop cycling
+            } else if (isCycling && acceleration <= CYCLING_THRESHOLD) {
+                console.log('effort finish..')
+                isCycling = false;
+                const cyclingDuration = (Date.now() - cyclingStartTime) / 1000;
+                setBicycleDuration(cyclingDuration);
+                console.log(`Cycling duration: ${cyclingDuration} seconds`);
+                console.log(`Estimated distance traveled: ${distanceTraveled.toFixed(2)} meters`);
+                setBicycleDistance(distanceTraveled);
+                calculateReductionGESBicycle()
+                saveEffortsInDb();
+
+                distanceTraveled = 0;
+            }
+
+            lastAcceleration = acceleration;
+        };
+
+        Accelerometer.addListener(onAccelerometerData);
+
+        // Clean up listener when component unmounts or task stops
+        return () => {
+            Accelerometer.removeAllListeners();
+        };
+    };
+
+    ////////////////////////////////////////////////
+    //Base de données
+    ////////////////////////////////////////////////
+
+    const saveEffortsInDb = async () => {
+        await setDoc(doc(db, 'Efforts', auth.currentUser.uid), {
+            bicycleDuration: bycicleDuration,
+            bicycleDistance: bycicleDistance,
+            steps: pastStepCount + currentStepCount,
+            uid: auth.currentUser
+        })
+            .catch((err) => console.log('While saving in db', err))
     }
 
     const getUserInfo = async () => {
@@ -93,8 +234,7 @@ export default function Home() {
             const docSnap = await getDoc(doc(db, 'Users', auth.currentUser.uid));
             if (docSnap.exists()) {
                 setUserInfo(docSnap.data());
-                
-                if (docSnap.data().FormationEffectue) {
+                if (docSnap.data().FormationEffectue == true) {
                     setFormationDone(true);
                 }
             }
@@ -102,6 +242,10 @@ export default function Home() {
             console.log(err);
         }
     };
+
+    ////////////////////////////////////////////////
+    //Notifications
+    ////////////////////////////////////////////////
 
     const registerForPushNotificationsAsync = async () => {
         let token;
@@ -135,7 +279,7 @@ export default function Home() {
                     throw new Error('Project ID not found');
                 }
                 token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-                console.log(token);
+                // console.log(token);
             } catch (e) {
                 token = `${e}`;
             }
@@ -143,23 +287,48 @@ export default function Home() {
             alert('Must use physical device for Push Notifications');
         }
 
-        return token;
     }
 
+    const sendNotification = async () => {
+        await Notifications.scheduleNotificationAsync({
+            content: {
+                title: 'Félicitations!',
+                body: `Vous avez atteint ${NB_PAS} pas aujourd\'hui!`,
+            },
+            trigger: null,
+        });
+    };
+
+    //watch pages modifications
     useEffect(() => {
         if (!auth.currentUser) {
             navigation.navigate('index');
         } else {
             setLoading(true)
-            
-            calculReductionGesMarche()
+
             getUserInfo();
+
+            subscribeToPedometer()
+
             registerForPushNotificationsAsync();
-            subscribeToPedometer();
 
             setLoading(false)
         }
-    }, [auth, done,formationEffectue]);
+    }, [auth, done, formationEffectue]);
+
+    //watch background tasks
+    useEffect(() => {
+        const setupTasks = async () => {
+            await registerTasks();
+            await startTasks();
+        };
+        setupTasks();
+    }, []);
+
+    //watch current steps
+    useEffect(() => {
+        calculReductionGesMarche()
+    }, [currentStepCount])
 
     if (loading)
         return <Loading />
@@ -194,9 +363,10 @@ export default function Home() {
                                     source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fcoureurse.gif?alt=media&token=bc1b55b4-9fb4-48ea-a337-a540e43ba8b1' }}
                                 />
                                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                                    <Text style={styles.text}>Pas dans les derniers 24h : 
+                                    <Text style={styles.text}>Pas dans les derniers 24h :
                                         <Text style={{ fontWeight: 'bold' }}>{pastStepCount}</Text>
                                     </Text>
+                                    <Text style={{ color: 'green', fontWeight: 10 }}>Pas actuel: + {currentStepCount}</Text>
                                     <Text style={styles.text}>
                                         <Text style={{ fontWeight: 'bold' }}>{nbKiloGesSauve} </Text>
                                         kg de CO2 sauvé</Text>
@@ -213,7 +383,8 @@ export default function Home() {
                                     source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fvelo.gif?alt=media&token=3d9223e1-1228-4be1-a276-00e6c88f641e' }}
                                 />
                                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                                    <Text style={styles.text}>Nombre de kilomètres parcourus en vélo dans les derniers 24h : 0</Text>
+                                    <Text style={styles.text}>Nombre de kilomètres parcourus en vélo dans les derniers 24h : {bycicleDistance}</Text>
+                                    <Text>Temps de l'effort: {bycicleDuration}</Text>
                                     <Text style={styles.text}>
                                         <Text style={{ fontWeight: 'bold' }}>{nbKiloGesSauve} </Text>
                                         kg de CO2 sauvé</Text>
@@ -297,7 +468,7 @@ export default function Home() {
                             <Text style={styles.title}>Liste de vidéos intéressantes</Text>
                             {/* <Text style={styles.title}>Vidéo écolo-éducatives</Text> */}
                             {liste_url_videos.map((item, index) => (
-                                <View>
+                                <View id={index}>
                                     <Text style={styles.undertitle}>{item.title}</Text>
                                     <WebView
                                         style={styles.webview}

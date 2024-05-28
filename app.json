@@ -19,7 +19,8 @@
         "Nous avons besoin de votre localisation pour nous permettre de vous avertir en cas d'alerte érosion.",
         "NSLocationAlwaysUsageDescription":
         "Nous avons besoin de votre localisation pour nous permettre de vous avertir en cas d'alerte érosion.",
-        "UIBackgroundModes":["location","fetch","remote-notification"]
+        "UIBackgroundModes":["location","fetch","remote-notification"],
+        "NSMotionUsageDescription": "L'application utilisera le pédomètre pour vous donnez des données pointilleuses et réduire votr emprunte écologique."
       }
     },
     "android": {

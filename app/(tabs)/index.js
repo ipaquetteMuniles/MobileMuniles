@@ -9,8 +9,7 @@
 ////////////////////////////////////////////////
 import { useState, useContext, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
-import { sendEmailVerification, signInWithEmailAndPassword } from "firebase/auth";
-import { getAuth } from 'firebase/auth';
+import { browserSessionPersistence,setPersistence , signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigation } from 'expo-router';
 
 ////////////////////////////////////////////////
@@ -42,30 +41,31 @@ export default function LoginScreen() {
     const navigation = useNavigation();
 
     const connect = () => {
-
+        // setPersistence(auth, browserSessionPersistence)
+        // .then(() => {
+        //     return signInWithEmailAndPassword(auth, courriel, mdp);
+        // })
         signInWithEmailAndPassword(auth, courriel, mdp)
-            .then((userCredential) => {
+        .then((userCredential) => {
+            const user = userCredential.user;
+            setConnection(true);
+            navigation.navigate('accueil');
 
-                // Signed in 
-                const user = userCredential.user;
-                setConnection(true)
-                navigation.navigate('accueil')
-
-                //update the email.verified
-                updateDoc(doc(db, 'Users', user.uid), {
-                    emailVerified: true
-                })
-                    .then(() => console.log('email verified updated'))
-                    .catch((err) => console.log(err))
-
-
-            })
-            .catch((error) => {
-                const errorCode = error.code;
-                const errorMessage = error.message;
-                setTextModal(errorMessage)
-                setModalVisible(true)
+            // Update the email verification status
+            return updateDoc(doc(db, 'Users', user.uid), {
+                emailVerified: true,
             });
+        })
+        .then(() => {
+            console.log('Email verification status updated');
+        })
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            setModalVisible(true);
+            console.log(`Error [${errorCode}]: ${errorMessage}`);
+        });
+       
     }
 
     useEffect(() => {

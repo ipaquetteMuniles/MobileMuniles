@@ -10,15 +10,11 @@
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState, useContext, createContext } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useNavigation } from 'expo-router';
 import * as Notifications from 'expo-notifications'
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";
-import { getAuth, onAuthStateChanged, getReactNativePersistence, initializeAuth } from "firebase/auth";
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 ////////////////////////////////////////////////
 
@@ -34,13 +30,10 @@ export const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-})
+export const auth = getAuth(app)
 export const UserContext = createContext();
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const [isconnected, setConnection] = useState(false);
   const navigation = useNavigation();
 
@@ -55,21 +48,29 @@ export default function TabLayout() {
   });
 
   useEffect(() => {
-    // Set auth persistence to local storage
-
     // Auth state listener
-    onAuthStateChanged(auth, (utilisateur) => {
-      if (utilisateur) {
-        if (utilisateur.emailVerified) {
-          
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        if (user.emailVerified) {
           setConnection(true);
           navigation.navigate("accueil");
-        } 
-        else
-          navigation.navigate("emailVerification")
+        } else {
+          navigation.navigate("emailVerification");
+        }
+      } else {
+        setConnection(false);
+        navigation.navigate("index");
       }
-    })
+    });
 
+    return () => unsubscribe();
+  }, [navigation]);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log(notification);
+    });
+    return () => subscription.remove();
   }, []);
 
   return (

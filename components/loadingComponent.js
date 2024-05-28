@@ -20,12 +20,6 @@ const Loading = ()=> {
   return (
    <View style={styles.container}>
         <ActivityIndicator animating={true} size={'large'}/>
-        <Image 
-            width={200}
-            height={200}
-            source={{uri:'https://www.muniles.ca/wp-content/uploads/2021/10/logo-muniles-light.svg'}}
-            resizeMode='contain'
-        />
    </View>
   );
 }
