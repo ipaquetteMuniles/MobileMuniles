@@ -35,6 +35,7 @@ export default function Signup() {
     const [confirm, setConfirm] = useState('');
     const [Name, setName] = useState('');
     const [phone, setPhone] = useState('');
+    const no_profile_pic_url = 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fno_profile_pic.jfif?alt=media&token=31e6531d-110d-4ae0-aa80-d1ea8fc2c47a'
 
     //Popup
     const [textModal, setTextModal] = useState('');
@@ -108,7 +109,7 @@ export default function Signup() {
             emailVerified:false,
             displayName: Name,
             phoneNumber:phone,
-            photoURL:user.photoURL,
+            photoURL:no_profile_pic_url,
             points:0,
             FormationEffectue:false
         })

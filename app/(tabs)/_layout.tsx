@@ -8,13 +8,13 @@
 // Bibliothèques
 ////////////////////////////////////////////////
 import { Tabs } from 'expo-router';
-import React, { useEffect, useState, useContext, createContext } from 'react';
+import React, { useEffect, useState, createContext } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { useNavigation } from 'expo-router';
 import * as Notifications from 'expo-notifications'
 import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged,initializeAuth,getReactNativePersistence  } from "firebase/auth";
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 ////////////////////////////////////////////////
 
@@ -30,7 +30,9 @@ export const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app)
+export const auth = initializeAuth(app,{
+    persistence:getReactNativePersistence(ReactNativeAsyncStorage)
+});
 export const UserContext = createContext();
 
 export default function TabLayout() {

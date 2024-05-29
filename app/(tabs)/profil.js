@@ -7,7 +7,7 @@
 ////////////////////////////////////////////////
 //Bibliothèques
 ////////////////////////////////////////////////
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import {StyleSheet, Text, View, ScrollView, TouchableOpacity,Image} from 'react-native';
 import {
     getAuth,
     reauthenticateWithCredential,
@@ -47,6 +47,9 @@ const Profil = () => {
     const [displayName, setDisplayName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [points,setPoints] = useState(0)
+    const no_profile_pic_url = 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fno_profile_pic.jfif?alt=media&token=31e6531d-110d-4ae0-aa80-d1ea8fc2c47a'
+    const [photoUrl,setPhotoUrl] = useState(no_profile_pic_url)
 
     //phone parameters
     const [phone, setPhone] = useState("")
@@ -95,6 +98,10 @@ const Profil = () => {
 
                     setPhone(data.phoneNumber)
                     setInitialPhone(data.phoneNumber)
+
+                    setPhotoUrl(data.photoURL);
+
+                    setPoints(data.points)
                 })
         }
     }
@@ -235,7 +242,6 @@ const Profil = () => {
         }
     }
 
-
     const resetUser = () => {
         setDisplayName("")
         setEmail("")
@@ -259,12 +265,34 @@ const Profil = () => {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.label}>Profil</Text>
-            {/* si l'utilisateur */}
+            {/* si l'utilisateur est connecte */}
             {auth.currentUser && (
                 <View>
+                    {/* Info */}
+                    <View style={{flexDirection:'row'}}>
+
+                        {/* Photo de profil */}
+                        <View>
+                            <TouchableOpacity onPress={()=>navigation.navigate('selectPhotos')}>
+                                <Image
+                                    resizeMode={'contains'}
+                                    source={{uri:photoUrl ? photoUrl : no_profile_pic_url}}
+                                    style={{borderRadius:60,height:100,width:100,borderColor:'gray',borderWidth:1}}
+                                />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View>
+                            <Text>{displayName}</Text>
+                            <Text>{points} pts</Text>
+                        </View>
+
+                    </View>
 
                     {/* display Name */}
                     <View>
+
+                        <Text style={styles.label}>Modifications du profil</Text>
                         <FormInput
                             valueUseState={displayName}
                             useState={setDisplayName}

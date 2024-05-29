@@ -9,7 +9,18 @@
 //Bibliothèques
 ////////////////////////////////////////////////
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, FlatList, Linking, Platform, Image, ActivityIndicator } from 'react-native';
+import {
+    StyleSheet,
+    Text,
+    View,
+    ScrollView,
+    FlatList,
+    Linking,
+    Platform,
+    Image,
+    ActivityIndicator,
+    Dimensions, TouchableOpacity
+} from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
@@ -48,9 +59,9 @@ export default function Home() {
     const [isPedometerAvailable, setIsPedometerAvailable] = useState('checking');
     const [pastStepCount, setPastStepCount] = useState(0);
     const [currentStepCount, setCurrentStepCount] = useState(0);
-
     const [nbKiloGesSauve, setKiloGes] = useState(0)
     const NB_PAS = 4930
+
     const [yearSelection, setYearSelection] = useState(2100)
 
     //vélo
@@ -59,6 +70,7 @@ export default function Home() {
     const STEP_DURATION = 0.1;
     const [bycicleDistance, setBicycleDistance] = useState(0)
     const [bycicleDuration, setBicycleDuration] = useState(0)
+    const [nbKiloGesSauveBicycle,setKiloGesBicycle] = useState(0)
 
     const map_url_ocean_level = `https://coastal.climatecentral.org/embed/map/10/-61.5882/47.3635/?theme=sea_level_rise&map_type=year&basemap=roadmap&contiguous=true&elevation_model=best_available&forecast_year=${yearSelection}&pathway=ssp3rcp70&percentile=p50&return_level=return_level_1&rl_model=gtsr&slr_model=ipcc_2021_med`
     const map_erosion_uqar = `https://sigec.uqar.ca/portal/carto/view?mapId=3d421e35-1941-4940-aa94-9b4645cbb691`
@@ -83,7 +95,7 @@ export default function Home() {
                 return;
             }
             if (data) {
-                calculateBicycleMovements();
+                calculateBycicleMovements();
             }
         });
 
@@ -163,7 +175,11 @@ export default function Home() {
     }
 
     const calculateReductionGESBicycle = () =>{
-
+        /*Each 7 kilometres travelled by bicycle will avoid 1 kilogram of CO2 emissions compared to the same distance covered by car 
+        https://www.uci.org/article/earth-day-takeaway-how-cycling-can-help-alleviate-climate-change/1dABgQWTCS3fAWpPg4h4yM
+        */
+       let newData = bycicleDistance * (1 / 7);//kg per kilometre
+       setKiloGesBicycle(newData);
     }
 
     const calculateBycicleMovements = async () => {
@@ -234,7 +250,7 @@ export default function Home() {
             const docSnap = await getDoc(doc(db, 'Users', auth.currentUser.uid));
             if (docSnap.exists()) {
                 setUserInfo(docSnap.data());
-                if (docSnap.data().FormationEffectue == true) {
+                if (docSnap.data().FormationEffectue) {
                     setFormationDone(true);
                 }
             }
@@ -308,7 +324,7 @@ export default function Home() {
 
             getUserInfo();
 
-            subscribeToPedometer()
+            subscribeToPedometer();
 
             registerForPushNotificationsAsync();
 
@@ -386,7 +402,7 @@ export default function Home() {
                                     <Text style={styles.text}>Nombre de kilomètres parcourus en vélo dans les derniers 24h : {bycicleDistance}</Text>
                                     <Text>Temps de l'effort: {bycicleDuration}</Text>
                                     <Text style={styles.text}>
-                                        <Text style={{ fontWeight: 'bold' }}>{nbKiloGesSauve} </Text>
+                                        <Text style={{ fontWeight: 'bold' }}>{nbKiloGesSauveBicycle} </Text>
                                         kg de CO2 sauvé</Text>
                                 </View>
                             </View>
@@ -399,46 +415,74 @@ export default function Home() {
                             <Slideshow />
                         </View>
 
-                        <View style={styles.section}>
-                            <Text style={styles.undertitle}>Compostage</Text>
-                            <Text style={styles.text}>
-                                Mettez du papier et du carton dans votre bac brun. Cela empêche le gel des matières en hiver et enlève les odeurs en été.
-                            </Text>
-                            <Text style={styles.text}>
-                                Mettez vos matières en vrac dans votre bac. Sinon, favorisez les sacs en papier ou les sacs certifiés compostables.
-                            </Text>
-                            <Text style={styles.text}>
-                                Saviez-vous qu’avec l’ensemble des matières compostables collectées sur le territoire, la Municipalité fait un compost de très bonne qualité? Vous pouvez vous en procurer au CGMR au coût de 5 $ pour l’équivalent d’un bac brun (240 litres ou 3 paniers à poissons) ou 25 $ la tonne (une boîte de camion). N’oubliez pas d’apporter vos contenants! Rappelez-vous que la qualité de ce produit découle directement de vos efforts à bien faire le tri à la source des matières résiduelles.
-                            </Text>
-                        </View>
-                        <View style={styles.section}>
-                            <Text style={styles.undertitle}>Recyclage</Text>
-                            <Text style={styles.text}>
-                                N’oubliez pas de rincer vos contenants afin de faciliter la récupération des matières. Les contenants non lavés souillent le reste des matières.
-                            </Text>
-                            <Text style={styles.text}>
-                                Réunissez toutes les pellicules plastiques dans un sac transparent noué, vous éviterez qu’elles s’envolent et atterrissent dans notre environnement.
-                            </Text>
-                            <Text style={styles.text}>
-                                Les sacs biodégradables ne sont ni recyclables, ni compostables et vont au bac noir.
-                            </Text>
-                            <Text style={styles.text}>
-                                Les matières recyclables doivent être déposées en vrac dans votre bac vert (sans sac).
-                            </Text>
-                            <Text style={styles.text}>
-                                Les bouteilles et les canettes consignées peuvent être rapportées au magasin ou donner à des organismes.
-                            </Text>
-                        </View>
-                        <View style={styles.section}>
-                            <Text style={styles.undertitle}>Déchets</Text>
-                            <Text style={styles.text}>
-                                Ne mettez jamais de produits dangereux dans votre bac noir,
-                                <Text style={styles.link} onPress={() => Linking.openURL('https://www.muniles.ca/services-aux-citoyens/matieres-residuelles/ecocentre-et-points-de-depots/')}>
-                                    ils doivent être disposés correctement aux endroits appropriés.
+                        <View>
+                            <View style={styles.section}>
+                                <Text style={styles.undertitle}>Compostage</Text>
+                                <Text style={styles.text}>
+                                    Mettez du papier et du carton dans votre bac brun. Cela empêche le gel des matières en hiver et enlève les odeurs en été.
                                 </Text>
-                            </Text>
-                        </View>
+                                <Text style={styles.text}>
+                                    Mettez vos matières en vrac dans votre bac. Sinon, favorisez les sacs en papier ou les sacs certifiés compostables.
+                                </Text>
+                                <Text style={styles.text}>
+                                    Saviez-vous qu’avec l’ensemble des matières compostables collectées sur le territoire, la Municipalité fait un compost de très bonne qualité? Vous pouvez vous en procurer au CGMR au coût de 5 $ pour l’équivalent d’un bac brun (240 litres ou 3 paniers à poissons) ou 25 $ la tonne (une boîte de camion). N’oubliez pas d’apporter vos contenants! Rappelez-vous que la qualité de ce produit découle directement de vos efforts à bien faire le tri à la source des matières résiduelles.
+                                </Text>
+                            </View>
+                            <View style={styles.section}>
+                                <Text style={styles.undertitle}>Recyclage</Text>
+                                <Text style={styles.text}>
+                                    N’oubliez pas de rincer vos contenants afin de faciliter la récupération des matières. Les contenants non lavés souillent le reste des matières.
+                                </Text>
+                                <Text style={styles.text}>
+                                    Réunissez toutes les pellicules plastiques dans un sac transparent noué, vous éviterez qu’elles s’envolent et atterrissent dans notre environnement.
+                                </Text>
+                                <Text style={styles.text}>
+                                    Les sacs biodégradables ne sont ni recyclables, ni compostables et vont au bac noir.
+                                </Text>
+                                <Text style={styles.text}>
+                                    Les matières recyclables doivent être déposées en vrac dans votre bac vert (sans sac).
+                                </Text>
+                                <Text style={styles.text}>
+                                    Les bouteilles et les canettes consignées peuvent être rapportées au magasin ou donner à des organismes.
+                                </Text>
+                            </View>
+                            <View style={styles.section}>
+                                <Text style={styles.undertitle}>Déchets</Text>
+                                <Text style={styles.text}>
+                                    Ne mettez jamais de produits dangereux dans votre bac noir,
+                                    <Text style={styles.link} onPress={() => Linking.openURL('https://www.muniles.ca/services-aux-citoyens/matieres-residuelles/ecocentre-et-points-de-depots/')}>
+                                        ils doivent être disposés correctement aux endroits appropriés.
+                                    </Text>
+                                </Text>
+                            </View>
 
+                            <View style={styles.section}>
+                                <Text style={styles.title}>Comment économiser de l'eau</Text>
+                                <Text style={styles.undertitle}>L’eau en quelques chiffres</Text>
+
+                                    <Text style={styles.text}>Tirer la chasse d’eau : 20 litres</Text>
+                                    <Text style={styles.text}>Prendre une douche : 20 litres à la minute</Text>
+                                    <Text style={styles.text}>Avec une pompe à débit réduit : 14 litres à la minute</Text>
+                                    <Text style={styles.text}>Prendre un bain : 170 litres</Text>
+                                    <Text style={styles.text}>Lave-vaisselle : 40 litres</Text>
+                                    <Text style={styles.text}>Laveuse : 80 litres</Text>
+                                    <Text style={styles.text}>Brossage de dents en laissant couler l’eau : 7,5 litres</Text>
+                                    <Text style={styles.text}>Laver sa voiture : 400 litres</Text>
+                                    <Text style={styles.text}>Remplir une piscine : 48 000 litres</Text>
+
+                                <Text style={styles.undertitle}>
+                                    Comment faire des économies?
+                                </Text>
+                                <TouchableOpacity onPress={()=>Linking.openURL('https://www.muniles.ca/wp-content/uploads/2021/10/economie_eau.jpeg')}>
+                                    <Image
+                                        source={{uri:'https://www.muniles.ca/wp-content/uploads/2021/10/economie_eau.jpeg'}}
+                                        style={{ padding: 10, margin:10 }}
+                                        width={Dimensions.get('window').width}
+                                        height={Dimensions.get('window').height / 2}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
 
                         {/* Carte */}
                         <View>
@@ -458,8 +502,7 @@ export default function Home() {
                                 javaScriptEnabled={true}
                                 domStorageEnabled={true}
                                 startInLoadingState={true}
-                                renderLoading={() => <ActivityIndicator color="#0000ff" />
-                                }
+                                renderLoading={() => <ActivityIndicator color="#0000ff" />}
                             />
                         </View>
 

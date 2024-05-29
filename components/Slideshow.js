@@ -2,7 +2,17 @@
 //Bibliothèques
 ////////////////////////////////////////////////
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Image, Animated, Dimensions, StyleSheet,Text, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Image,
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+  TouchableOpacity,
+  Linking
+} from 'react-native';
 import { useAssets } from 'expo-asset';
 import {slides} from '../slides'
 const { width } = Dimensions.get('window');
@@ -46,7 +56,9 @@ const Slideshow = () => {
     <View style={styles.container}>
       <Animated.View style={[styles.slider, { transform: [{ translateX }] }]}>
         {images.map((image, index) => (
-          <Image key={index} source={image} style={styles.image} resizeMode='contain'/>
+          <TouchableOpacity onPress={()=>Linking.openURL(image.uri)} id={index}>
+            <Image key={index} source={image} style={styles.image} resizeMode='contain'/>
+          </TouchableOpacity>
         ))}
       </Animated.View>
     </View>
