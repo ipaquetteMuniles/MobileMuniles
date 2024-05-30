@@ -25,7 +25,7 @@ import { useNavigation } from 'expo-router';
 import { deleteDoc, doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore';
 import { useContext, useEffect, useState, useRef } from 'react';
 import PhoneInput from 'react-native-phone-input'
-
+import {useLocalSearchParams,router} from "expo-router";
 ////////////////////////////////////////////////
 //Composants
 ////////////////////////////////////////////////
@@ -50,6 +50,7 @@ const Profil = () => {
     const [points,setPoints] = useState(0)
     const no_profile_pic_url = 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fno_profile_pic.jfif?alt=media&token=31e6531d-110d-4ae0-aa80-d1ea8fc2c47a'
     const [photoUrl,setPhotoUrl] = useState(no_profile_pic_url)
+    const urlParams = useLocalSearchParams();
 
     //phone parameters
     const [phone, setPhone] = useState("")
@@ -273,7 +274,10 @@ const Profil = () => {
 
                         {/* Photo de profil */}
                         <View>
-                            <TouchableOpacity onPress={()=>navigation.navigate('selectPhotos')}>
+                            <TouchableOpacity onPress={()=>{
+                                navigation.navigate('selectPhotos');
+                                router.setParams({urlParams:photoUrl})
+                            }}>
                                 <Image
                                     resizeMode={'contains'}
                                     source={{uri:photoUrl ? photoUrl : no_profile_pic_url}}
@@ -397,12 +401,14 @@ const Profil = () => {
                 onPress={Deconnexion}
             />
 
-            <FormButton
-                buttonTitle={'Supprimer mon compte'}
-                backgroundColor='red'
-                color='white'
-                onPress={() => setShowDelete(true)}
-            />
+            {!showDelete && (
+                <FormButton
+                    buttonTitle={'Supprimer mon compte'}
+                    backgroundColor='red'
+                    color='white'
+                    onPress={() => setShowDelete(true)}
+                />
+            )}
 
             {showDelete && (
 

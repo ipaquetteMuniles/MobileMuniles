@@ -23,7 +23,7 @@ import {
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
-import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
+import {doc, getDoc, getFirestore, setDoc, updateDoc} from 'firebase/firestore';
 import { useLocalSearchParams } from "expo-router";
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
@@ -42,7 +42,7 @@ import FormButton from '@/components/FormButton';
 import Slideshow from '@/components/Slideshow';
 import Loading from '@/components/loadingComponent';
 import FormInput from '@/components/FormInput';
-
+import Popup from "@/components/Popup";
 
 ////////////////////////////////////////////////
 //App
@@ -54,13 +54,12 @@ export default function Home() {
 
     const [userInfo, setUserInfo] = useState();
     const [formationEffectue, setFormationDone] = useState(false);
-    const { done } = useLocalSearchParams();
 
     const [isPedometerAvailable, setIsPedometerAvailable] = useState('checking');
     const [pastStepCount, setPastStepCount] = useState(0);
     const [currentStepCount, setCurrentStepCount] = useState(0);
     const [nbKiloGesSauve, setKiloGes] = useState(0)
-    const NB_PAS = 4930
+    const NB_PAS = 4200
 
     const [yearSelection, setYearSelection] = useState(2100)
 
@@ -77,6 +76,9 @@ export default function Home() {
     const [url, setUrl] = useState(map_url_ocean_level)
 
     const [loading, setLoading] = useState(false)
+    //Popup
+    const [textModal, setTextModal] = useState('');
+    const [modalVisible, setModalVisible] = useState(false);
 
     ////////////////////////////////////////////////
     //Pédomètre
@@ -89,7 +91,7 @@ export default function Home() {
     // Register tasks
     const registerTasks = async () => {
         // Register the cycling task
-        await TaskManager.defineTask(CYCLING_TASK, async ({ data, error }) => {
+        TaskManager.defineTask(CYCLING_TASK, async ({ data, error }) => {
             if (error) {
                 console.log(error);
                 return;
@@ -100,13 +102,13 @@ export default function Home() {
         });
 
         // Register the pedometer task
-        await TaskManager.defineTask(PEDOMETER_TASK, async () => {
+        TaskManager.defineTask(PEDOMETER_TASK, async () => {
             console.log('Pedometer task running');
     
             // Log the current and past step counts for debugging
             console.log('Current step count:', currentStepCount);
             console.log('Past step count:', pastStepCount);
-            if (pastStepCount >= 4906) {
+            if (pastStepCount >= NB_PAS) {
                 console.log('Notifying user');
                 await sendNotification();
                 return BackgroundFetch.Result.NewData;
@@ -137,6 +139,7 @@ export default function Home() {
         setIsPedometerAvailable(String(isAvailable));
 
         if (isAvailable) {
+            console.log('pedometer is set ...')
             const end = new Date();
             const start = new Date();
             start.setDate(end.getDate() - 1);
@@ -144,6 +147,9 @@ export default function Home() {
             const pastStepCountResult = await Pedometer.getStepCountAsync(start, end);
             if (pastStepCountResult) {
                 setPastStepCount(pastStepCountResult.steps);
+                if(pastStepCountResult.steps >= NB_PAS){
+                    givePoints()
+                }
             }
 
         }
@@ -152,7 +158,7 @@ export default function Home() {
     };
 
     const calculReductionGesMarche = async () => {
-        await Pedometer.watchStepCount(result => {
+        Pedometer.watchStepCount(result => {
             setCurrentStepCount(result.steps);
         });
         /*
@@ -259,6 +265,14 @@ export default function Home() {
         }
     };
 
+    const givePoints = async() =>{
+        await updateDoc(doc(db,'Users',auth.currentUser.uid),{
+            points:userInfo.points + 100
+        })
+            .then(()=>console.log('pts updated'))
+            .catch((err)=>console.log(err))
+    }
+
     ////////////////////////////////////////////////
     //Notifications
     ////////////////////////////////////////////////
@@ -330,15 +344,12 @@ export default function Home() {
 
             setLoading(false)
         }
-    }, [auth, done, formationEffectue]);
+    }, [auth, formationEffectue]);
 
     //watch background tasks
     useEffect(() => {
-        const setupTasks = async () => {
-            await registerTasks();
-            await startTasks();
-        };
-        setupTasks();
+        registerTasks();
+        startTasks();
     }, []);
 
     //watch current steps
@@ -353,18 +364,17 @@ export default function Home() {
         <ScrollView contentContainerStyle={styles.container}>
             {!formationEffectue && (
                 <View style={styles.centeredView}>
+                    <Text style={styles.text}>
+                        Les questions suivantes nous permettrons de construire un suivi et
+                        de vous permettre de réduire votre emprunte environnementale
+                    </Text>
+
                     <FormButton
                         buttonTitle="Commencer ma formation éco-énergétique"
                         onPress={() => navigation.navigate('formation')}
                     />
-                    <Text style={styles.introText}>
-                        Les questions suivantes nous permettrons de construire un suivi et de vous permettre de réduire votre emprunte environnementale
-                    </Text>
                 </View>
             )}
-
-            {formationEffectue &&
-                (
                     <View>
                         <View>
                             <Text style={styles.title}>Ce que vous avez sauvé dans les derniers 24H</Text>
@@ -523,7 +533,9 @@ export default function Home() {
                             ))}
                         </View>
                     </View>
-                )}
+
+            <Popup text={textModal} setModalVisible={setModalVisible} modalVisible={modalVisible} />
+
         </ScrollView>
     );
 }

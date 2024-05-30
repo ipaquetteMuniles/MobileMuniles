@@ -16,7 +16,6 @@ import { sendEmailVerification, getAuth, signOut } from 'firebase/auth';
 ////////////////////////////////////////////////
 import FormButton from '@/components/FormButton';
 import Popup from '@/components/Popup';
-import { UserContext } from './(tabs)/_layout';
 
 ////////////////////////////////////////////////
 // App
@@ -27,11 +26,9 @@ const EmailVerification = () => {
     const user = auth.currentUser;
 
     const [courriel, setCourriel] = useState(user.email);
-    const [status, setStatus] = useState(false);
 
     const [textModal, setTextModal] = useState("");
     const [modalVisible, setModalVisible] = useState(false);
-    // const { setConnection } = useContext(UserContext);
 
     const ReSendEmail = () => {
         sendEmailVerification(user)
@@ -61,7 +58,6 @@ const EmailVerification = () => {
         const interval = setInterval(() => {
             user.reload().then(() => {
                 if (user.emailVerified) {
-                    setStatus(true);
                     navigation.navigate('accueil');
                     clearInterval(interval);
                 }
@@ -76,7 +72,6 @@ const EmailVerification = () => {
     return (
         <View style={styles.container}>
             {/* Si le courriel n'est pas confirmé */}
-            {!status && (
                 <View>
                     <Text style={styles.title}>
                         Confirmez votre compte par le courriel envoyé à {courriel}
@@ -99,7 +94,6 @@ const EmailVerification = () => {
                         backgroundColor='red'
                     />
                 </View>
-            )}
 
             <Popup text={textModal} setModalVisible={setModalVisible} modalVisible={modalVisible} />
         </View>
