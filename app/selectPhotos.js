@@ -63,7 +63,8 @@ const deleteImageFromStorage = async(fileName)=>{
 }
 
 const saveImage = async (result) => {
-	try {
+	try
+	{
 		const file = result.assets[0];
 		setImage(file.uri);
 
@@ -76,7 +77,8 @@ const saveImage = async (result) => {
 		//endroit du stockage de l'image
 		const storageRef = ref(storage, `profils_images/${user.uid}/${fileName}`)
         console.log(file)
-	   await uploadBytes(storageRef, blob,{
+
+		await uploadBytes(storageRef, blob,{
            contentType:file.mimeType
        })
 		  .then(async ()=>{
@@ -91,7 +93,8 @@ const saveImage = async (result) => {
 		   })
 		   .catch((err) => console.error('Error while uploading photo:', err))
 
-	} catch (err) {
+	}
+	catch (err) {
 		console.error('Error in saveImage function:', err);
 		setTextModal('Erreur rencontrée, veuillez essayer plus tard ..')
 		setModalVisible(true)
@@ -115,6 +118,7 @@ useEffect(()=>{
 return (
 	<View style={styles.container}>
 
+		<View>
 			<Text style={styles.label}>Photo de profil actuel</Text>
 
 			<Image
@@ -122,6 +126,7 @@ return (
 				width={200}
 				height={200}
 			/>
+		</View>
 
 		<FormButton
 			buttonTitle={'Sélectionner une nouvelle photo de profil'}

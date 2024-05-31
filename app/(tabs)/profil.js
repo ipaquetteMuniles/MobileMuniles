@@ -270,10 +270,10 @@ const Profil = () => {
             {auth.currentUser && (
                 <View>
                     {/* Info */}
-                    <View style={{flexDirection:'row'}}>
+                    <View style={{flexDirection:'row',flex:2,alignItems:'center'}}>
 
                         {/* Photo de profil */}
-                        <View>
+                        <View style={{margin:10}}>
                             <TouchableOpacity onPress={()=>{
                                 navigation.navigate('selectPhotos');
                                 router.setParams({urlParams:photoUrl})
@@ -288,7 +288,7 @@ const Profil = () => {
 
                         <View>
                             <Text>{displayName}</Text>
-                            <Text>{points} pts</Text>
+                            <Text style={{fontWeight:'bold',color:'green'}}>{points} pts</Text>
                         </View>
 
                     </View>
@@ -395,6 +395,11 @@ const Profil = () => {
             )}
 
             <FormButton
+                buttonTitle={'Changer le mot de passe'}
+                onPress={() => navigation.navigate('resetPassword')}
+            />
+
+            <FormButton
                 buttonTitle={'Deconnexion'}
                 backgroundColor='red'
                 color='white'
@@ -430,11 +435,6 @@ const Profil = () => {
                 </View>
 
             )}
-
-            <FormButton
-                buttonTitle={'Changer le mot de passe'}
-                onPress={() => navigation.navigate('resetPassword')}
-            />
             <Popup text={textModal} setModalVisible={setModalVisible} modalVisible={modalVisible} />
 
         </ScrollView>

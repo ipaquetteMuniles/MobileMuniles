@@ -339,7 +339,7 @@ export default function Home() {
             getUserInfo();
 
             subscribeToPedometer();
-
+            calculReductionGesMarche()
             registerForPushNotificationsAsync();
 
             setLoading(false)

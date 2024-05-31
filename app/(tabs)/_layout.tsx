@@ -40,7 +40,6 @@ export default function TabLayout() {
   const navigation = useNavigation();
 
   // Notifications
-
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -78,7 +77,6 @@ export default function TabLayout() {
   return (
     <UserContext.Provider value={{ isconnected, setConnection }}>
       <Tabs
-
         screenOptions={{
           tabBarActiveTintColor: '#060270',
           tabBarInactiveTintColor: '#8e8e93',
