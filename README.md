@@ -8,6 +8,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 2. Installer les dépendances
 
    ```bash
+   npm install -g npm
    npm install
    ```
 
