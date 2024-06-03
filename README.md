@@ -18,6 +18,13 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
     npx expo start
    ```
 
+#Pour simuler l'application sur votre appareil 
+https://expo.dev/go
+
+-Partez le serveur avec la commande : npx expo start
+-Scanner le code QR afficher dans le CMD
+-L'applicaiton s'ouvrira de elle même
+
 ## Learn more
 https://docs.expo.dev/more/expo-cli/
 To learn more about developing your project with Expo, look at the following resources:
@@ -31,3 +38,5 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+Contacter iohann au besoin :)) : iohannpaquette.pst@hotmail.com
