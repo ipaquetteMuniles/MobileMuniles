@@ -90,7 +90,12 @@ const Formation = () => {
                     
                         <FormButton
                             buttonTitle="Retour"
-                            onPress={()=>navigation.navigate("accueil",{done:true})}
+                            onPress={()=>{
+                                if(auth.currentUser)
+                                    navigation.navigate("accueil")
+                                else
+                                    navigation.navigate("index")
+                            }}
                         />
                    
                 </View>

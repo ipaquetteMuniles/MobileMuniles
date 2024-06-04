@@ -62,6 +62,12 @@ export default function LoginScreen() {
         .catch((error) => {
             const errorCode = error.code;
             const errorMessage = error.message;
+            if(errorCode === 'auth/invalid-credential')
+                setTextModal(`Entrées invalides, courriel ou mot de passe invalide. Veuillez réessayer`)
+            else if(errorCode === 'auth/invalid-email')
+                setTextModal('Email invalide, veuillez corriger')
+            else
+                setTextModal(`Erreur lors de la connexion veuillez réessayer.`)
             setModalVisible(true);
             console.log(`Error [${errorCode}]: ${errorMessage}`);
         });
@@ -96,6 +102,7 @@ export default function LoginScreen() {
                 useState={setMdp}
                 valueUseState={mdp}
                 secureTextEntry={true}
+                onSubmitEditing={connect}
             />
 
             {/* submit button */}

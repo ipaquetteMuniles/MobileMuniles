@@ -60,29 +60,29 @@ export default function Signup() {
             setModalVisible(true);
         } else {
             createUserWithEmailAndPassword(auth, courriel, mdp)
-                .then((userCredential) => {
+                .then(async(userCredential) => {
                     setLoading(true);
 
                     // Signed in
                     const user = userCredential.user;
                     //update db
-                    updateDBUser(user)
+                    await updateDBUser(user)
 
-                    resetField()
-                    
+                    //login the user
+                    signInWithEmailAndPassword(auth,courriel,mdp)
+                        .then(()=>{
+                            console.log('login sucessful')
+                            setConnection(true)
+                            navigation.navigate("emailVerification")
+                        })
+                        .catch((err)=>console.log(err))
+
                     //sending confirmation email
                     sendEmailVerification(user)
                     .then(()=>console.log('Email sented !'))
                     .catch((err)=>console.log('Error while sending the confirmation email'))
 
-                    //login the user
-                    signInWithEmailAndPassword(auth,courriel,mdp)
-                    .then(()=>{
-                        console.log('login sucessful')
-                        setConnection(true)
-                        navigation.navigate("emailVerification")
-                    })
-                    .catch((err)=>console.log(err))
+                    resetField()
 
                     setLoading(false);
                 })
@@ -141,11 +141,6 @@ export default function Signup() {
                 <Text style={styles.label}>Numéro de téléphone</Text>
 
                 <PhoneInput
-                        style={{
-                            margin: 10,
-                            width: '90%'
-                        }}
-
                         placeholder={'Phone number'}
                         autoFormat={true}
                         confirmText={'Done'}
@@ -170,6 +165,7 @@ export default function Signup() {
                 useState={setConfirm}
                 valueUseState={confirm}
                 secureTextEntry
+                onSubmitEditing={createAccount}
             />
             <FormButton buttonTitle="Créer un compte" onPress={createAccount} />
             <Popup text={textModal} setModalVisible={setModalVisible} modalVisible={modalVisible} />
@@ -195,17 +191,22 @@ const styles = StyleSheet.create({
         color: '#333', 
     },
     field: {
-        marginBottom: 16,
-        padding: 12,
+        margin: 20,
+        padding: 15,
         borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
+        borderColor: '#ddd',
+        borderRadius: 10,
         backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
     label: {
-        fontSize: 20,
-        color: '#060270',
-        marginBottom: 10,
-        fontWeight: 'bold',
+        fontSize: 18,
+        color: '#333',
+        marginBottom: 8,
+        fontWeight: '600',
     }
 });

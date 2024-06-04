@@ -1,164 +1,389 @@
 ////////////////////////////////////////////////
 // Municipalité des îles-de-la-Madeleine
-// Auteur :Iohann Paquette
-// Date : 2024-05-07 
+// Auteur : Iohann Paquette
+// Date : 2024-05-07
 ////////////////////////////////////////////////
 
 ////////////////////////////////////////////////
-//Bibliothèques
+// Bibliothèques
 ////////////////////////////////////////////////
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { ActivityIndicator, StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
+import MapView, { Marker, Polyline } from 'react-native-maps';
+import {setDoc, doc, getFirestore, updateDoc} from "firebase/firestore";
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import * as TaskManager from 'expo-task-manager';
-import * as Notifications from 'expo-notifications'
+import * as Notifications from 'expo-notifications';
+import { Feather } from "@expo/vector-icons";
+import haversine from 'haversine';
+import {getAuth} from "firebase/auth";
+
 ////////////////////////////////////////////////
-//Composants
+// Composants
 ////////////////////////////////////////////////
-import { erosions_db } from '../../EROSIONS_DB'
+import { erosions_db } from '../../EROSIONS_DB';
+import FormButton from "../../components/FormButton";
+import Loading from "../../components/loadingComponent";
+
 ////////////////////////////////////////////////
 // App
 ////////////////////////////////////////////////
 const Map = () => {
     const [location, setLocation] = useState(null);
-    const [errorMsg, setErrorMsg] = useState("")
-    const location_refresh_time = 2000 // in ms
+    const [locationPermission, setLocationPermission] = useState(false);
 
-    const GEOFENCE_TASK = 'geofence_task';
+    const [errorMsg, setErrorMsg] = useState("");
+
+    const [route, setRoute] = useState([]);
+    const [distance, setDistance] = useState(0);
+    const [tracking, setTracking] = useState(false);
+    const [showEffort, setShowEffort] = useState(false);
+    const [effortType,setEffortType] = useState("");
+
+    const db = getFirestore()
+    const auth = getAuth()
+
+    const threshold_distance_erosion = 0.6;//limite proximite erosion
+    const location_refresh_time = 10000; // in ms
 
     const requestPermissions = async () => {
         const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
         if (foregroundStatus === 'granted') {
-            const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-            if (backgroundStatus === 'granted') {
-                let location = await Location.getCurrentPositionAsync({});
-                setLocation(location);
-
-            }
-            else {
-                setErrorMsg('Permission to access location was denied');
-            }
+            setLocationPermission(true);
+            await Location.getCurrentPositionAsync().then((loc) => {
+                setLocation({
+                    latitude: loc.coords.latitude,
+                    longitude: loc.coords.longitude
+                });
+            });
+        } else {
+            setErrorMsg('Permission to access location was denied'); // TODO: Remplacer par popup
         }
     };
 
-    const FollowUser = async () =>{
-        console.log('here')
-        await Location.startGeofencingAsync('geofence1',
-        [
-            {
-                identifier: 'geofence1',
-                latitude: 47.37492106924283,
-                longitude: -61.86988562683622,
-                radius: 0.2,//in meters
-                notifyOnEnter: true,
-                notifyOnExit: false
+    const startActivity = async (type) => {
+        switch (type) {
+            case 'velo':
+                await startVelo();
+                break;
+            case 'walk':
+                await startWalk();
+                break;
+            case 'run':
+                await startRun();
+                break;
+            default:
+                break;
+        }
+    };
 
+    const stopActivity = async (type) => {
+        switch (type) {
+            case 'velo':
+                await stopVelo();
+                break;
+            case 'walk':
+                await stopWalk();
+                break;
+            case 'run':
+                await stopRun();
+                break;
+            default:
+                break;
+        }
+    };
+
+    const handleStartStop = async (type) => {
+        setEffortType(type)
+
+        if (locationPermission) {
+            if (tracking) {
+                await stopActivity(type);
+                setTracking(false);
+                setRoute([]);
+                setDistance(0);
+            } else {
+                await startActivity(type);
+                setTracking(true);
+                setShowEffort(false);
             }
-        ]);
-        // erosions_db.forEach(element => {
-
-        //     await Location.startGeofencingAsync('geofence1', 
-        //     [
-        //         {
-        //             identifier:'geofence1',
-        //             latitude:element.latitude,
-        //             longitude:element.longitude,
-        //             radius:100,//in meters
-        //             notifyOnEnter:true,
-        //             notifyOnExit:false                             
-
-        //         }
-        //     ]);
-        // });
-
+        }
+        else{
+            await requestPermissions()
+        }
     }
+
+    const startEffort = async () =>{
+        await Location.watchPositionAsync(
+            {
+                accuracy: Location.Accuracy.BestForNavigation,
+                distanceInterval: 1,
+            },
+            (newLocation) => {
+                const { latitude, longitude } = newLocation.coords;
+                setLocation({ latitude, longitude });
+                setRoute((prevRoute) => {
+                    const newRoute = [...prevRoute, { latitude, longitude }];
+                    if (prevRoute.length > 0) {
+                        const distanceIncrement = haversine(prevRoute[prevRoute.length - 1], { latitude, longitude });
+                        setDistance((prevDistance) => prevDistance + distanceIncrement);
+                    }
+                    return newRoute;
+                });
+            }
+        );
+    }
+
+    const startVelo = async () => {
+        //partir une effort
+        await startEffort()
+
+        //const tag = `${auth.currentUser.uid}_${new Date().getDate()}`;
+
+        //save in db
+        await setDoc(doc(db,'Efforts_Bike',auth.currentUser.uid),{
+            startTime : new Date().getTime(),
+            uid:auth.currentUser.uid,
+            type:effortType
+        })
+            .catch((err)=>console.log(err))
+    };
+
+    const startWalk = async () => {
+
+    };
+
+    const startRun = async () => {
+        // Similar implementation to startVelo
+        // Adjust as needed for running
+    };
+
+    const stopWalk = async() =>{
+        console.log('arret de la marche')
+    }
+
+    const stopRun = async() =>{
+        console.log('arret de la course')
+    }
+
+    const stopVelo = async() =>{
+        console.log('arret du velo')
+
+        await updateDoc(doc(db,'Efforts_Bike',auth.currentUser.uid),{
+            endTime:new Date().getTime(),
+            Distance: distance
+        })
+            .catch((err)=>console.log(err))
+    }
+
+    const WatchErosionSectors = async () => {
+       if(location){
+           erosions_db.forEach((element) => {
+
+               const distance = haversine(
+                   { latitude:location.latitude, longitude:location.longitude },
+                   { latitude: element.latitude, longitude: element.longitude }
+               );
+
+               if (distance <= threshold_distance_erosion) {
+                   //AlertUser();
+                   console.log('proche de ',element.title)
+               }
+           });
+       }
+    };
 
     const AlertUser = async () => {
         await Notifications.scheduleNotificationAsync({
             content: {
-                title: "You've got mail! 📬",
-                body: 'Here is the notification body',
-                data: { data: 'goes here', test: { test1: 'more data' } },
+                title: "Attention! 📬",
+                body: 'Vous êtes proche d\'une zone d\'érosion.',
             },
-            trigger: { seconds: 2 },
+            trigger: { seconds: 1 },
         });
-
-    }
+    };
 
     useEffect(() => {
-        requestPermissions()
-    }, [])
+        requestPermissions();
+    }, []);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            //FollowUser()
+            WatchErosionSectors()
         }, location_refresh_time);
 
         return () => clearInterval(interval);
 
     }, []);
 
-    //check position and if close to erosion site, it notify the user
-    TaskManager.defineTask(GEOFENCE_TASK, async({ data, error }) => {
-        if (error) {
-            console.log(error)
-            // Error occurred - check `error.message` for more details.
-            return;
-        }
-        if (data) {
-            const { eventType } = data;
-
-            if (eventType === Location.GeofencingEventType.Enter) {
-                AlertUser()
-                console.log('YEPPP')
-            }
-            else if(eventType === Location.GeofencingEventType.Exit)
-                console.log('bye bye')
-        }
-    });
+    if(!location)
+        return <Loading />
 
     return (
         <View style={styles.container}>
-            <MapView
-                style={styles.map}
-                showsUserLocation
-                initialRegion={{
-                    longitude: erosions_db[0].longitude,
-                    latitude: erosions_db[0].latitude,
-                    latitudeDelta: 0.001,
-                    longitudeDelta: 0.01
-                }}
-            >
-                {erosions_db.map((element, index) => (
-                    <Marker
-                        key={index}
-                        coordinate={{
-                            latitude: element.latitude,
-                            longitude: element.longitude
-                        }}
-                        title={element.title}
-                    />
-                ))}
-            </MapView>
+                <MapView
+                    style={styles.map}
+                    showsUserLocation={true}
+                    initialRegion={{
+                        longitude: location.longitude,
+                        latitude: location.latitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01
+                    }}
+                >
+                    {erosions_db.map((element, index) => (
+                        <Marker
+                            key={index}
+                            coordinate={{
+                                latitude: element.latitude,
+                                longitude: element.longitude
+                            }}
+                            title={element.title}
+                        />
+                    ))}
+                    <Polyline coordinates={route} strokeWidth={5} strokeColor="blue" />
+                </MapView>
 
+            <View style={styles.topContainer}>
+                <View style={styles.searchBar}>
+                    <TextInput
+                        placeholder="Rechercher..."
+                        style={styles.searchInput}
+                        placeholderTextColor="gray"
+                    />
+                    {showEffort && (
+                        <View style={styles.liste}>
+                            <TouchableOpacity
+                                style={styles.listeItem}
+                                onPress={() => handleStartStop('velo')}
+                            >
+                                <Text style={styles.listeItemText}>Vélo</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.listeItem}
+                                onPress={() => handleStartStop('walk')}
+                            >
+                                <Text style={styles.listeItemText}>Marche</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.listeItem}
+                                onPress={() => handleStartStop('run')}
+                            >
+                                <Text style={styles.listeItemText}>Course</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
+
+                <View style={styles.buttonContainer}>
+                    <Feather
+                        name="navigation"
+                        size={30}
+                        color="#060270"
+                        onPress={() => setShowEffort(!showEffort)}
+                    />
+                </View>
+            </View>
+
+            {tracking && (
+                <View style={styles.statsContainer}>
+                    <FormButton
+                        buttonTitle="Arrêter l'entraînement"
+                        onPress={() => handleStartStop(effortType)}
+                        backgroundColor="#060270"
+                        color="white"
+                    />
+                    <Text style={styles.statsText}>Distance : {distance.toFixed(2)} km</Text>
+                </View>
+            )}
         </View>
     );
-
-
-}
+};
 
 export default Map;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#060270',
+        backgroundColor: '#f9f9f9',
         margin: 10,
-        borderRadius: 60
+        borderRadius: 10,
     },
     map: {
         width: '100%',
         height: '100%',
-    }
+    },
+    topContainer: {
+        position: 'absolute',
+        top: 60,
+        left: '5%',
+        right: '5%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 10,
+        padding: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 5,
+    },
+    searchBar: {
+        flex: 2,
+        marginRight: 10,
+    },
+    searchInput: {
+        height: 40,
+        borderColor: '#ddd',
+        borderWidth: 1,
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        backgroundColor: '#fff',
+    },
+    buttonContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    liste: {
+        backgroundColor: '#fff',
+        marginTop: 10,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 3,
+        padding: 10,
+    },
+    listeItem: {
+        paddingVertical: 10,
+        borderBottomColor: '#ddd',
+        borderBottomWidth: 1,
+    },
+    listeItemText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    statsContainer: {
+        position: 'absolute',
+        bottom: 20,
+        left: '5%',
+        right: '5%',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 10,
+        padding: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 5,
+        alignItems: 'center',
+    },
+    statsText: {
+        fontSize: 16,
+        color: '#333',
+    },
 });

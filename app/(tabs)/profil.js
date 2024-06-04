@@ -5,26 +5,22 @@
 ////////////////////////////////////////////////
 
 ////////////////////////////////////////////////
-//Bibliothèques
+// Bibliothèques
 ////////////////////////////////////////////////
-import {StyleSheet, Text, View, ScrollView, TouchableOpacity,Image} from 'react-native';
+import {StyleSheet, Text, View, ScrollView, TouchableOpacity,Image,RefreshControl} from 'react-native';
 import {
     getAuth,
     reauthenticateWithCredential,
     EmailAuthProvider,
     signOut,
-    updateEmail,
     verifyBeforeUpdateEmail,
     updateProfile,
-    updatePhoneNumber,
-    PhoneAuthProvider,
     deleteUser
 }
     from 'firebase/auth';
 import { useNavigation } from 'expo-router';
 import { deleteDoc, doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore';
-import { useContext, useEffect, useState, useRef } from 'react';
-import PhoneInput from 'react-native-phone-input'
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import {useLocalSearchParams,router} from "expo-router";
 ////////////////////////////////////////////////
 //Composants
@@ -34,6 +30,7 @@ import FormButton from '@/components/FormButton';
 import FormInput from '@/components/FormInput';
 import Popup from '@/components/Popup';
 import Loading from '@/components/loadingComponent'
+import {Feather} from "@expo/vector-icons";
 ////////////////////////////////////////////////
 // App
 ////////////////////////////////////////////////
@@ -48,20 +45,14 @@ const Profil = () => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [points,setPoints] = useState(0)
+    const [phone,setPhone] = useState("")
+
     const no_profile_pic_url = 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fno_profile_pic.jfif?alt=media&token=31e6531d-110d-4ae0-aa80-d1ea8fc2c47a'
     const [photoUrl,setPhotoUrl] = useState(no_profile_pic_url)
     const urlParams = useLocalSearchParams();
 
-    //phone parameters
-    const [phone, setPhone] = useState("")
-    const [confirm, setConfirm] = useState(null);
-    const [code, setCode] = useState('');
-    const [verificationId, setVerificationId] = useState(null);
-    const recaptchaVerifier = useRef(null);
-
     const [initialEmail, setInitialEmail] = useState("");
     const [initialDisplayName, setInitialDisplayName] = useState("");
-    const [initialPhone, setInitialPhone] = useState("");
 
     const [confirmPassword, setConfirmPassword] = useState("")
     const [showDelete, setShowDelete] = useState(false)
@@ -98,7 +89,6 @@ const Profil = () => {
                     setInitialEmail(data.email)
 
                     setPhone(data.phoneNumber)
-                    setInitialPhone(data.phoneNumber)
 
                     setPhotoUrl(data.photoURL);
 
@@ -147,9 +137,10 @@ const Profil = () => {
 
             setTextModal('Un email de vérification a été envoyé à votre nouvelle adresse.');
             setModalVisible(true);
-            console.log(email)
 
+            console.log(email)
             console.log(auth.currentUser.uid)
+
             //changer dans la base de données
             updateDoc(doc(db, 'Users', auth.currentUser.uid), {
                 email: email
@@ -176,37 +167,6 @@ const Profil = () => {
             }
         }
     }
-
-    const changePhone = async () => {
-        try {
-            const phoneProvider = new PhoneAuthProvider(auth);
-            const verificationId = await phoneProvider.verifyPhoneNumber(phone, recaptchaVerifier.current);
-            setVerificationId(verificationId);
-            setTextModal('Un code de vérification a été envoyé à votre numéro de téléphone.');
-            setModalVisible(true);
-        } catch (err) {
-            console.log(err);
-            setTextModal('Échec de l\'envoi du code de vérification. Veuillez réessayer.');
-            setModalVisible(true);
-        }
-    };
-
-    const confirmCode = async () => {
-        try {
-            const credential = PhoneAuthProvider.credential(verificationId, code);
-            await updatePhoneNumber(auth.currentUser, credential);
-            await updateDoc(doc(db, 'Users', auth.currentUser.uid), {
-                phoneNumber: phone
-            });
-            setInitialPhone(phone);
-            setTextModal('Votre numéro de téléphone a été modifié avec succès !');
-            setModalVisible(true);
-        } catch (err) {
-            console.log(err);
-            setTextModal('Échec de la vérification du code. Veuillez réessayer.');
-            setModalVisible(true);
-        }
-    };
 
     const DeleteAccount = async () => {
 
@@ -249,22 +209,29 @@ const Profil = () => {
         setPhone("")
     }
 
+    const refresh = ()=>{
+        setLoading(true);
+        loadUser();
+        setLoading(false)
+    }
+
     useEffect(() => {
         if (!auth.currentUser)
             navigation.navigate('index')
         else
-        {
-            setLoading(true);
-            loadUser();
-            setLoading(false)
-        }
+            refresh()
     }, [auth.currentUser])
 
     if(loading)
         return <Loading />
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView
+            refreshControl={
+                <RefreshControl refreshing={loading} onRefresh={refresh} />
+            }
+            contentContainerStyle={styles.container}
+        >
             <Text style={styles.label}>Profil</Text>
             {/* si l'utilisateur est connecte */}
             {auth.currentUser && (
@@ -274,16 +241,18 @@ const Profil = () => {
 
                         {/* Photo de profil */}
                         <View style={{margin:10}}>
-                            <TouchableOpacity onPress={()=>{
+                            {/*<TouchableOpacity onPress={()=>{
                                 navigation.navigate('selectPhotos');
                                 router.setParams({urlParams:photoUrl})
-                            }}>
+                            }}>*/}
                                 <Image
                                     resizeMode={'contains'}
-                                    source={{uri:photoUrl ? photoUrl : no_profile_pic_url}}
+                                    source={{uri:photoUrl}}
                                     style={{borderRadius:60,height:100,width:100,borderColor:'gray',borderWidth:1}}
                                 />
+{/*
                             </TouchableOpacity>
+*/}
                         </View>
 
                         <View>
@@ -346,51 +315,19 @@ const Profil = () => {
                         )}
                     </View>
 
-                    <View>
                         <View style={styles.field}>
-                            <Text style={styles.label}>Numéro de téléphone: {phone}</Text>
+                           <View style={{flex:2,flexDirection:'row',alignItems:'center'}}>
+                               <Text style={styles.label}>Numéro de téléphone: {phone}</Text>
 
-                            {/* <PhoneInput
-                                style={{
-                                    margin: 10,
-                                    width: '90%',
-                                    padding: 10
-                                }}
-                                initialValue={phone}
-                                placeholder={'+1 (123)-456-7890'}
-                                autoFormat={true}
-                                confirmText={'Done'}
-                                countriesList={require('../../countries.json')}
-                                initialCountry='ca'
-                                onChangePhoneNumber={setPhone}
-                            /> */}
+                               <Feather
+                                   style={{margin:20}}
+                                   size={'25'}
+                                   name={'settings'}
+                                   onPress={()=>navigation.navigate('changeTelephone')}
+                               />
+                           </View>
                         </View>
-                        {/* {initialPhone !== phone && (
-                            <View style={{ margin: 10 }}>
-                                <FormButton
-                                    buttonTitle={'Changer le téléphone'}
-                                    onPress={changePhone}
-                                    backgroundColor='#5B9943'
-                                />
-                                {verificationId && (
-                                    <View>
-                                        <FormInput
-                                            valueUseState={code}
-                                            useState={setCode}
-                                            label={'Code de vérification'}
-                                            placeholder={'123456'}
-                                            inputMode="numeric"
-                                        />
-                                        <FormButton
-                                            buttonTitle={'Vérifier le code'}
-                                            onPress={confirmCode}
-                                            backgroundColor='#5B9943'
-                                        />
-                                    </View>
-                                )}
-                            </View>
-                        )} */}
-                    </View>
+
                 </View>
             )}
 
@@ -416,7 +353,6 @@ const Profil = () => {
             )}
 
             {showDelete && (
-
                 <View style={{ margin: 10 }}>
                     <FormInput
                         secureTextEntry
@@ -435,33 +371,83 @@ const Profil = () => {
                 </View>
 
             )}
+
             <Popup text={textModal} setModalVisible={setModalVisible} modalVisible={modalVisible} />
 
         </ScrollView>
     );
 }
 
-export default Profil;
-
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1, // Allow content to scroll
-        padding: 16,
-        justifyContent: 'center',
-        backgroundColor: '#f9f9f9',
+        flexGrow: 1,
+        padding: 20,
+        backgroundColor: '#f0f4f8',
     },
     field: {
-        marginBottom: 16,
-        padding: 12,
+        marginBottom: 20,
+        padding: 15,
         borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
+        borderColor: '#ddd',
+        borderRadius: 10,
         backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
     label: {
-        fontSize: 20,
-        color: '#060270',
-        marginBottom: 10,
+        marginTop:20,
+        fontSize: 18,
+        color: '#333',
+        marginBottom: 8,
+        fontWeight: '600',
+    },
+    input: {
+        backgroundColor: '#fff',
+        color: '#333',
+        borderColor: '#ddd',
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 12,
+        width: '100%',
+        height: 40,
+    },
+    profileInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    profileImage: {
+        borderRadius: 60,
+        height: 100,
+        width: 100,
+        borderColor: 'gray',
+        borderWidth: 1,
+        marginRight: 15,
+    },
+    profileDetails: {
+        flex: 1,
+    },
+    profileName: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#333',
+    },
+    profilePoints: {
+        fontSize: 18,
         fontWeight: 'bold',
-    }
+        color: 'green',
+    },
+    buttonContainer: {
+        marginVertical: 10,
+    },
+    modalText: {
+        fontSize: 16,
+        color: '#555',
+        textAlign: 'center',
+    },
 });
+
+export default Profil;

@@ -19,7 +19,9 @@ import {
     Platform,
     Image,
     ActivityIndicator,
-    Dimensions, TouchableOpacity
+    Dimensions,
+    TouchableOpacity,
+    RefreshControl
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
@@ -84,22 +86,10 @@ export default function Home() {
     //Pédomètre
     ////////////////////////////////////////////////
 
-
     const PEDOMETER_TASK = 'PEDOMETER_TASK';
-    const CYCLING_TASK = 'TRACK_CYCLING';
 
     // Register tasks
     const registerTasks = async () => {
-        // Register the cycling task
-        TaskManager.defineTask(CYCLING_TASK, async ({ data, error }) => {
-            if (error) {
-                console.log(error);
-                return;
-            }
-            if (data) {
-                calculateBycicleMovements();
-            }
-        });
 
         // Register the pedometer task
         TaskManager.defineTask(PEDOMETER_TASK, async () => {
@@ -126,12 +116,6 @@ export default function Home() {
             startOnBoot: true,
         });
 
-        // Start accelerometer task
-        await BackgroundFetch.registerTaskAsync(CYCLING_TASK, {
-            minimumInterval: 1, // 1 second for testing, adjust as needed
-            stopOnTerminate: false,
-            startOnBoot: true,
-        });
     };
 
     const subscribeToPedometer = async () => {
@@ -180,75 +164,24 @@ export default function Home() {
         setKiloGes((nbKilometres * 0.222).toFixed(2)); // assuming 5 km saves 1.11 kg of CO2
     }
 
-    const calculateReductionGESBicycle = () =>{
-        /*Each 7 kilometres travelled by bicycle will avoid 1 kilogram of CO2 emissions compared to the same distance covered by car 
-        https://www.uci.org/article/earth-day-takeaway-how-cycling-can-help-alleviate-climate-change/1dABgQWTCS3fAWpPg4h4yM
-        */
-       let newData = bycicleDistance * (1 / 7);//kg per kilometre
-       setKiloGesBicycle(newData);
-    }
-
-    const calculateBycicleMovements = async () => {
-        console.log('calculating bicycle ...');
-
-        let isCycling = false;
-        let cyclingStartTime = null;
-        let lastAcceleration = { x: 0, y: 0, z: 0 };
-        let distanceTraveled = 0;
-
-        Accelerometer.setUpdateInterval(STEP_DURATION * 1000);
-
-        const onAccelerometerData = ({ x, y, z }) => {
-            const acceleration = Math.sqrt(x ** 2 + y ** 2 + z ** 2) - G;
-
-            if (isCycling) {
-                // Estimate distance traveled based on acceleration
-                const deltaAcceleration = acceleration - lastAcceleration;
-                distanceTraveled += 0.5 * deltaAcceleration * (STEP_DURATION ** 2);
-            }
-
-            // Check if cycling movement is detected
-            if (!isCycling && acceleration > CYCLING_THRESHOLD) {
-                isCycling = true;
-                cyclingStartTime = Date.now();
-                //stop cycling
-            } else if (isCycling && acceleration <= CYCLING_THRESHOLD) {
-                console.log('effort finish..')
-                isCycling = false;
-                const cyclingDuration = (Date.now() - cyclingStartTime) / 1000;
-                setBicycleDuration(cyclingDuration);
-                console.log(`Cycling duration: ${cyclingDuration} seconds`);
-                console.log(`Estimated distance traveled: ${distanceTraveled.toFixed(2)} meters`);
-                setBicycleDistance(distanceTraveled);
-                calculateReductionGESBicycle()
-                saveEffortsInDb();
-
-                distanceTraveled = 0;
-            }
-
-            lastAcceleration = acceleration;
-        };
-
-        Accelerometer.addListener(onAccelerometerData);
-
-        // Clean up listener when component unmounts or task stops
-        return () => {
-            Accelerometer.removeAllListeners();
-        };
-    };
-
     ////////////////////////////////////////////////
     //Base de données
     ////////////////////////////////////////////////
 
     const saveEffortsInDb = async () => {
-        await setDoc(doc(db, 'Efforts', auth.currentUser.uid), {
-            bicycleDuration: bycicleDuration,
-            bicycleDistance: bycicleDistance,
+        await setDoc(doc(db, 'Efforts_Walk', auth.currentUser.uid), {
+            Date:new Date(),
             steps: pastStepCount + currentStepCount,
-            uid: auth.currentUser
+            uid: auth.currentUser.uid
         })
             .catch((err) => console.log('While saving in db', err))
+    }
+
+    const getBicycleData = async() =>{
+        await getDoc(doc(db,'Efforts_Walk',auth.currentUser.uid))
+            .then((res)=>{
+                console.log(res.data())
+            })
     }
 
     const getUserInfo = async () => {
@@ -329,22 +262,30 @@ export default function Home() {
         });
     };
 
+    const refresh = () => {
+        setLoading(true)
+        setUrl(`https://coastal.climatecentral.org/embed/map/10/-61.5882/47.3635/?theme=sea_level_rise&map_type=year&basemap=roadmap&contiguous=true&elevation_model=best_available&forecast_year=${yearSelection}&pathway=ssp3rcp70&percentile=p50&return_level=return_level_1&rl_model=gtsr&slr_model=ipcc_2021_med`)
+
+        getUserInfo();
+        saveEffortsInDb()
+
+        getBicycleData()
+        subscribeToPedometer();
+        calculReductionGesMarche()
+
+        registerForPushNotificationsAsync();
+
+        setLoading(false)
+    }
+
     //watch pages modifications
     useEffect(() => {
         if (!auth.currentUser) {
             navigation.navigate('index');
-        } else {
-            setLoading(true)
+        } else
+            refresh()
 
-            getUserInfo();
-
-            subscribeToPedometer();
-            calculReductionGesMarche()
-            registerForPushNotificationsAsync();
-
-            setLoading(false)
-        }
-    }, [auth, formationEffectue]);
+    }, [auth, formationEffectue,url]);
 
     //watch background tasks
     useEffect(() => {
@@ -361,9 +302,13 @@ export default function Home() {
         return <Loading />
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView
+            refreshControl={
+                <RefreshControl refreshing={loading} onRefresh={refresh} />
+            }
+                contentContainerStyle={styles.container}>
             {!formationEffectue && (
-                <View style={styles.centeredView}>
+                <View style={{alignItems:'center',borderColor:'gray',borderWidth:1,borderRadius:30,justifyContent:'center'}}>
                     <Text style={styles.text}>
                         Les questions suivantes nous permettrons de construire un suivi et
                         de vous permettre de réduire votre emprunte environnementale
@@ -382,7 +327,6 @@ export default function Home() {
                             <View style={{ flexDirection: 'row', flex: 2, alignItems: 'center', margin: 10 }}>
                                 <Image
                                     style={{ padding: 10, borderRadius: 60 }}
-
                                     width={100}
                                     height={100}
                                     resizeMode='contain'
@@ -502,7 +446,7 @@ export default function Home() {
                                 useState={setYearSelection}
                                 valueUseState={yearSelection}
                                 placeholder={'Année'}
-                                onSubmitEditing={() => setUrl(url)}
+                                onSubmitEditing={refresh}
                                 inputMode='numeric'
                             />
                             <WebView
@@ -512,7 +456,7 @@ export default function Home() {
                                 javaScriptEnabled={true}
                                 domStorageEnabled={true}
                                 startInLoadingState={true}
-                                renderLoading={() => <ActivityIndicator color="#0000ff" />}
+                                renderLoading={() => <Loading />}
                             />
                         </View>
 
