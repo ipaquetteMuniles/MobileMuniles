@@ -1,8 +1,16 @@
 # Municipalité des îles-de-la-Madeleine
 
-## Pour commencer
+## À installer
+Node.js : https://nodejs.org/en/download/prebuilt-installer
+Visual Studio Code (Pour voir ou modifier le code source) : https://code.visualstudio.com/Download
 
-1. Installer les dépendances
+## À installer sur le cellulaire
+https://expo.dev/go
+Expo Go vous permettra de rouler l'application sur votre cellulaire personnel.
+
+## Pour partir le serveur
+
+### 1. Installer les dépendances
 
    ```bash
    npm install
@@ -10,26 +18,33 @@
    yarn
    ```
 
-3. Partir l'application
+### 2. Partir l'application dans un invite de commande
+Avant toute chose veuillez vous assurez que vous êtes sur un WiFi qui n'a aucune restrictions (Muniles), pas (Muniles-Public)
+1. Premièrement, vous devez ouvrir un invite de commande et partir le serveur
+   -Windows et rechercher "invite de commande"
 
    ```bash
-    npx expo start
+    npx expo start --tunnel --clear
    ```
-##Pour de l'aide
+#### Arguments pour bien partir le serveur
+   - (--tunnel) Pour créer un tunnel entre le serveur et votre téléphone cellulaire, permet de rouler l'application sur un WiFi avec restriction
+   - (--clear) Vide la cache du serveur et repart l'aplication à neuf
+   - (--localhost) Roule le serveur sur une adresse ip locale
+   - (--offline) Roule le serveur sans connexion
+
+Tout autres informations sur les arguments possibles : https://docs.expo.dev/more/expo-cli/
+
+2. Deuxièmement, scannez le code QR et ouvrez le lien
+![image](https://github.com/ipaquetteMuniles/MobileMuniles/assets/169171284/d0996443-7bba-435c-a69f-648c8229a158)
+
+3. Troisièmement, apprécier l'aplication qui roule sur un serveur que vous venez tout juste de créer
+
+## Pour de l'aide sur les commandes
    ```bash
     npx expo --help
    ```   
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-##Contacter iohann au besoi
+## Contacter iohann au besoin
 iohann.paquette.1@ens.etsmtl.ca
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
