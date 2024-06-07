@@ -37,7 +37,10 @@ Tout autres informations sur les arguments possibles : https://docs.expo.dev/mor
 2. Deuxièmement, scannez le code QR et ouvrez le lien
 ![image](https://github.com/ipaquetteMuniles/MobileMuniles/assets/169171284/d0996443-7bba-435c-a69f-648c8229a158)
 
-3. Troisièmement, apprécier l'aplication qui roule sur un serveur que vous venez tout juste de créer
+Assurez vous d'être sur le mode "Expo Go". Vous pouvez changer de mode en cliquant sur la touche "S" du clavier.
+![image](https://github.com/ipaquetteMuniles/MobileMuniles/assets/169171284/dd0df849-a933-426c-a1d8-708a792c530b)
+
+4. Troisièmement, apprécier l'aplication qui roule sur un serveur que vous venez tout juste de créer
 
 ## Pour de l'aide sur les commandes
    ```bash
