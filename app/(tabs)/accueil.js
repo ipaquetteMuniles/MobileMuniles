@@ -45,6 +45,7 @@ import Slideshow from '@/components/Slideshow';
 import Loading from '@/components/loadingComponent';
 import FormInput from '@/components/FormInput';
 import Popup from "@/components/Popup";
+import {Feather} from "@expo/vector-icons";
 
 ////////////////////////////////////////////////
 //App
@@ -119,8 +120,10 @@ export default function Home() {
     };
 
     const subscribeToPedometer = async () => {
-        const isAvailable = await Pedometer.isAvailableAsync();
-        setIsPedometerAvailable(String(isAvailable));
+
+        const isAvailable = await Pedometer.requestPermissionsAsync();
+        console.log(isAvailable.status)
+        setIsPedometerAvailable(String(isAvailable.status));
 
         if (isAvailable) {
             console.log('pedometer is set ...')
@@ -135,11 +138,24 @@ export default function Home() {
                     givePoints()
                 }
             }
-
         }
         else
             console.log('Pedometer is not available')
     };
+
+    const changePermissionPedometer = async() =>{
+
+        const status = await Pedometer.getPermissionsAsync();
+
+        if(status.status === 'granted')
+        {
+            setIsPedometerAvailable('denied')
+        }
+        else{
+            subscribeToPedometer()
+            setIsPedometerAvailable('granted')
+        }
+    }
 
     const calculReductionGesMarche = async () => {
         Pedometer.watchStepCount(result => {
@@ -264,7 +280,7 @@ export default function Home() {
 
     const refresh = () => {
         setLoading(true)
-        setUrl(`https://coastal.climatecentral.org/embed/map/10/-61.5882/47.3635/?theme=sea_level_rise&map_type=year&basemap=roadmap&contiguous=true&elevation_model=best_available&forecast_year=${yearSelection}&pathway=ssp3rcp70&percentile=p50&return_level=return_level_1&rl_model=gtsr&slr_model=ipcc_2021_med`)
+        setUrl(map_url_ocean_level)
 
         getUserInfo();
         saveEffortsInDb()
@@ -324,27 +340,46 @@ export default function Home() {
                         <View>
                             <Text style={styles.title}>Ce que vous avez sauvé dans les derniers 24H</Text>
                             {/* Pedometre */}
-                            <View style={{ flexDirection: 'row', flex: 2, alignItems: 'center', margin: 10 }}>
-                                <Image
-                                    style={{ padding: 10, borderRadius: 60 }}
-                                    width={100}
-                                    height={100}
-                                    resizeMode='contain'
-                                    source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fcoureurse.gif?alt=media&token=bc1b55b4-9fb4-48ea-a337-a540e43ba8b1' }}
-                                />
-                                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                                    <Text style={styles.text}>Pas dans les derniers 24h :
-                                        <Text style={{ fontWeight: 'bold' }}>{pastStepCount}</Text>
-                                    </Text>
-                                    <Text style={{ color: 'green', fontWeight: 10 }}>Pas actuel: + {currentStepCount}</Text>
-                                    <Text style={styles.text}>
-                                        <Text style={{ fontWeight: 'bold' }}>{nbKiloGesSauve} </Text>
-                                        kg de CO2 sauvé</Text>
+                            {isPedometerAvailable === 'granted' && (
+                                <View style={{ flexDirection: 'row', flex: 3, alignItems: 'center', margin: 10 }}>
+                                    <Image
+                                        style={{ padding: 10, borderRadius: 60 }}
+                                        width={100}
+                                        height={100}
+                                        resizeMode='contain'
+                                        source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fcoureurse.gif?alt=media&token=bc1b55b4-9fb4-48ea-a337-a540e43ba8b1' }}
+                                    />
+                                    <View style={{ alignItems: 'center', justifyContent: 'center',width:'50%' }}>
+                                        <Text style={styles.text}>Pas dans les derniers 24h :
+                                            <Text style={{ fontWeight: 'bold' }}>{pastStepCount}</Text>
+                                        </Text>
+                                        <Text style={{ color: 'green', fontWeight: 10 }}>Pas actuel: + {currentStepCount}</Text>
+                                        <Text style={styles.text}>
+                                            <Text style={{ fontWeight: 'bold' }}>{nbKiloGesSauve} </Text>
+                                            kg de CO2 sauvé</Text>
+                                    </View>
+
+                                    {/*Arreter d'écouter le pédomètre*/}
+                                    <View>
+                                        <Feather
+                                            name={'bell'}
+                                            size={30}
+                                            onPress={()=>changePermissionPedometer()}
+                                        />
+                                    </View>
                                 </View>
-                            </View>
+                            )}
+
+                            {isPedometerAvailable !== 'granted' && (
+                               <FormButton
+                                   onPress={changePermissionPedometer}
+                                   buttonTitle={'Activer le pédomètre'}
+
+                                   />
+                            )}
 
                             {/* Vélo */}
-                            <View style={{ flexDirection: 'row', flex: 2, alignItems: 'center', margin: 10 }}>
+                            <View style={{ flexDirection: 'row', flex: 3, alignItems: 'center', margin: 10 }}>
                                 <Image
                                     style={{ padding: 10, borderRadius: 60 }}
                                     width={100}
@@ -352,7 +387,7 @@ export default function Home() {
                                     resizeMode='contain'
                                     source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fvelo.gif?alt=media&token=3d9223e1-1228-4be1-a276-00e6c88f641e' }}
                                 />
-                                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                                <View style={{ alignItems: 'center', justifyContent: 'center',width:'50%' }}>
                                     <Text style={styles.text}>Nombre de kilomètres parcourus en vélo dans les derniers 24h : {bycicleDistance}</Text>
                                     <Text>Temps de l'effort: {bycicleDuration}</Text>
                                     <Text style={styles.text}>

@@ -7,7 +7,17 @@
 ////////////////////////////////////////////////
 // Bibliothèques
 ////////////////////////////////////////////////
-import { ActivityIndicator, StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
+import {
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    View,
+    TextInput,
+    TouchableOpacity,
+    Alert,
+    ScrollView}
+    from 'react-native';
+
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import {setDoc, doc, getFirestore, updateDoc} from "firebase/firestore";
 import * as Location from 'expo-location';
@@ -24,14 +34,15 @@ import {getAuth} from "firebase/auth";
 import { erosions_db } from '../../EROSIONS_DB';
 import FormButton from "../../components/FormButton";
 import Loading from "../../components/loadingComponent";
-
+import Popup from "../../components/Popup";
 ////////////////////////////////////////////////
 // App
 ////////////////////////////////////////////////
 const Map = () => {
     const [location, setLocation] = useState(null);
     const [locationPermission, setLocationPermission] = useState(false);
-
+    const [showErosionsPoints,setErosionsPoints] = useState(false)
+    const [notifyErosionPoints,setNotifyErosionsPoints] = useState(true)
     const [errorMsg, setErrorMsg] = useState("");
 
     const [route, setRoute] = useState([]);
@@ -40,11 +51,14 @@ const Map = () => {
     const [showEffort, setShowEffort] = useState(false);
     const [effortType,setEffortType] = useState("");
 
+    const [textModal, setTextModal] = useState("");
+    const [modalVisible, setModalVisible] = useState(false);
+
     const db = getFirestore()
     const auth = getAuth()
 
     const threshold_distance_erosion = 0.6;//limite proximite erosion
-    const location_refresh_time = 10000; // in ms
+    const location_refresh_time = 100000; // in ms
 
     const requestPermissions = async () => {
         const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
@@ -57,7 +71,9 @@ const Map = () => {
                 });
             });
         } else {
-            setErrorMsg('Permission to access location was denied'); // TODO: Remplacer par popup
+            setTextModal("Accès à l'application refusé. Réessayer plus tard");
+            setLocation(null)
+            setModalVisible(true)
         }
     };
 
@@ -200,24 +216,39 @@ const Map = () => {
                 body: 'Vous êtes proche d\'une zone d\'érosion.',
             },
             trigger: { seconds: 1 },
-        });
-    };
+        })
+    }
 
     useEffect(() => {
         requestPermissions();
     }, []);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            WatchErosionSectors()
-        }, location_refresh_time);
+        console.log(notifyErosionPoints)
+            const interval = setInterval(() => {
+                if(notifyErosionPoints)
+                    WatchErosionSectors()
+            }, location_refresh_time);
 
-        return () => clearInterval(interval);
+            return () => clearInterval(interval);
 
-    }, []);
+    }, [notifyErosionPoints]);
 
-    if(!location)
-        return <Loading />
+    if(!location || !locationPermission)
+    {
+        return (
+            <View style={styles.container}>
+                <Loading />
+                {!locationPermission && (
+                    <View>
+                        <TouchableOpacity onPress={requestPermissions}>
+                            <Text style={{fontWeight:'bold'}}>Me redemander les permissions de localisations</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </View>
+        )
+    }
 
     return (
         <View style={styles.container}>
@@ -231,7 +262,7 @@ const Map = () => {
                         longitudeDelta: 0.01
                     }}
                 >
-                    {erosions_db.map((element, index) => (
+                    {showErosionsPoints && erosions_db.map((element, index) => (
                         <Marker
                             key={index}
                             coordinate={{
@@ -252,32 +283,57 @@ const Map = () => {
                         placeholderTextColor="gray"
                     />
                     {showEffort && (
-                        <View style={styles.liste}>
-                            <TouchableOpacity
-                                style={styles.listeItem}
-                                onPress={() => handleStartStop('velo')}
-                            >
-                                <Text style={styles.listeItemText}>Vélo</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.listeItem}
-                                onPress={() => handleStartStop('walk')}
-                            >
-                                <Text style={styles.listeItemText}>Marche</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.listeItem}
-                                onPress={() => handleStartStop('run')}
-                            >
-                                <Text style={styles.listeItemText}>Course</Text>
-                            </TouchableOpacity>
-                        </View>
+                        <ScrollView>
+                            <View style={styles.liste}>
+                                <Text style={{fontWeight:'bold'}}>Points d'érosions</Text>
+                                <TouchableOpacity
+                                    style={styles.listeItem}
+                                    onPress={() => setErosionsPoints(!showErosionsPoints)}
+                                >
+                                    <Text style={styles.listeItemText}>
+                                        {showErosionsPoints ? `Enlever les points d'érosions` : `Me montrer les points d'érosions`}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.listeItem}
+                                    onPress={() => setNotifyErosionsPoints(!notifyErosionPoints)}
+                                >
+                                    <Text style={styles.listeItemText}>
+                                        {notifyErosionPoints ?`Enlever les notifications` :`Me notifier sur les points d'érosions`}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.liste}>
+                                <Text style={{fontWeight:'bold'}}>Entrainements</Text>
+                                <TouchableOpacity
+                                    style={styles.listeItem}
+                                    onPress={() => handleStartStop('velo')}
+                                >
+                                    <Text style={styles.listeItemText}>Vélo</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.listeItem}
+                                    onPress={() => handleStartStop('walk')}
+                                >
+                                    <Text style={styles.listeItemText}>Marche</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.listeItem}
+                                    onPress={() => handleStartStop('run')}
+                                >
+                                    <Text style={styles.listeItemText}>Course</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                        </ScrollView>
                     )}
                 </View>
 
                 <View style={styles.buttonContainer}>
                     <Feather
-                        name="navigation"
+                        name={showEffort ? "menu" : "navigation"}
                         size={30}
                         color="#060270"
                         onPress={() => setShowEffort(!showEffort)}
@@ -296,6 +352,9 @@ const Map = () => {
                     <Text style={styles.statsText}>Distance : {distance.toFixed(2)} km</Text>
                 </View>
             )}
+
+            <Popup text={textModal} setModalVisible={setModalVisible} modalVisible={modalVisible} />
+
         </View>
     );
 };

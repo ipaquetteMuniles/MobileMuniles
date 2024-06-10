@@ -9,7 +9,6 @@ export default function AppLayout() {
         <Stack.Screen name="emailVerification" options={{ headerShown: false }} />
         <Stack.Screen name="selectPhotos" options={{ headerShown: false }} />
         <Stack.Screen name="changeTelephone" options={{ headerShown: false }} />
-
     </Stack>
   );
 }

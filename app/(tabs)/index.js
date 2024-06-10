@@ -7,11 +7,16 @@
 ////////////////////////////////////////////////
 //Bibliothèques
 ////////////////////////////////////////////////
-import { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
 import { browserSessionPersistence,setPersistence , signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigation } from 'expo-router';
-
+/*import {
+    statusCodes,
+    isErrorWithCode,
+    GoogleSignin,
+    GoogleSigninButton
+} from "@react-native-google-signin/google-signin";*/
 ////////////////////////////////////////////////
 //Composants
 ////////////////////////////////////////////////
@@ -74,6 +79,40 @@ export default function LoginScreen() {
        
     }
 
+ /*   const signinWithGoogle = async () =>{
+        try {
+            await GoogleSignin.hasPlayServices();
+            const userInfo = await GoogleSignin.signIn();
+
+            //setState({ userInfo });
+            console.log(userInfo)
+        } catch (error) {
+            if (isErrorWithCode(error)) {
+                switch (error.code) {
+                    case statusCodes.NO_SAVED_CREDENTIAL_FOUND:
+                        // Android and Apple only. No saved credential found, try calling `createAccount`
+                        break;
+                    case statusCodes.SIGN_IN_CANCELLED:
+                        // sign in was cancelled
+                        break;
+                    case statusCodes.ONE_TAP_START_FAILED:
+                        // Android and Web only, you probably have hit rate limiting.
+                        // On Android, you can still call `presentExplicitSignIn` in this case.
+                        // On the web, user needs to click the `WebGoogleSigninButton` to sign in.
+                        break;
+                    case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+                        // Android-only: play services not available or outdated
+                        // Web: when calling an unimplemented api (requestAuthorization)
+                        break;
+                    default:
+                    // something else happened
+                }
+            } else {
+                // an error that's not related to google sign in occurred
+            }
+        }
+    }*/
+
     useEffect(() => {
         if (auth.currentUser)
             navigation.navigate('accueil')
@@ -107,6 +146,12 @@ export default function LoginScreen() {
 
             {/* submit button */}
             <FormButton onPress={connect} buttonTitle={'Connexion'} />
+
+            {/*Se connecter par google*/}
+            {/*  <GoogleSigninButton
+                onPress={signinWithGoogle}
+            />
+            */}
 
             {/* mot de passe oublié */}
             <FormButton onPress={() => navigation.navigate("resetPassword")} buttonTitle={'Mot de passe oublié'} />

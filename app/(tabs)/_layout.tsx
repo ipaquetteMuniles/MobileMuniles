@@ -19,13 +19,13 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 ////////////////////////////////////////////////
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyDi7BZBmGCLP9NxLr7cbeTFarjyHWElUXY",
-  authDomain: "mobilemuniles.firebaseapp.com",
-  projectId: "mobilemuniles",
-  storageBucket: "mobilemuniles.appspot.com",
-  messagingSenderId: "999169612850",
-  appId: "1:999169612850:web:aac70d2035e6f8f9cbb02b",
-  measurementId: "G-BDHMS9PHZ6"
+    apiKey: "AIzaSyDi7BZBmGCLP9NxLr7cbeTFarjyHWElUXY",
+    authDomain: "mobilemuniles.firebaseapp.com",
+    projectId: "mobilemuniles",
+    storageBucket: "mobilemuniles.appspot.com",
+    messagingSenderId: "999169612850",
+    appId: "1:999169612850:web:aac70d2035e6f8f9cbb02b",
+    measurementId: "G-BDHMS9PHZ6"
 };
 
 // Initialize Firebase

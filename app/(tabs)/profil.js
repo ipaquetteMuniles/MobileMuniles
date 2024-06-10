@@ -241,18 +241,20 @@ const Profil = () => {
 
                         {/* Photo de profil */}
                         <View style={{margin:10}}>
-                            {/*<TouchableOpacity onPress={()=>{
+                           {/* <TouchableOpacity onPress={()=>{
                                 navigation.navigate('selectPhotos');
                                 router.setParams({urlParams:photoUrl})
                             }}>*/}
                                 <Image
                                     resizeMode={'contains'}
                                     source={{uri:photoUrl}}
-                                    style={{borderRadius:60,height:100,width:100,borderColor:'gray',borderWidth:1}}
+                                    style={{height:150,width:150,borderColor:'gray',borderWidth:1}}
                                 />
+
 {/*
                             </TouchableOpacity>
 */}
+
                         </View>
 
                         <View>

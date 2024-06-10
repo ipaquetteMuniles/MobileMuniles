@@ -25,12 +25,14 @@ import Popup from "../components/Popup";
 ////////////////////////////////////////////////
 // App
 ////////////////////////////////////////////////
-const SelectPhotos = ({ route }) => {
+const SelectPhotos = () => {
 
 	//Constants
 	const no_profile_pic_url = 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fno_profile_pic.jfif?alt=media&token=31e6531d-110d-4ae0-aa80-d1ea8fc2c47a'
+	const { urlParams } = useLocalSearchParams();
+
 	const navigation = useNavigation()
-	const [image, setImage] = useState(no_profile_pic_url);
+	const [image, setImage] = useState(urlParams ? urlParams:no_profile_pic_url);
 	const user = getAuth().currentUser // actual user
 	const db = getFirestore()
 	const storage = getStorage();
@@ -39,12 +41,9 @@ const SelectPhotos = ({ route }) => {
 	const [textModal, setTextModal] = useState("");
 	const [modalVisible, setModalVisible] = useState(false);
 
-	const { urlParams } = useLocalSearchParams();
-
 	////////////////////////////////////////////////
 	// Functions
 	////////////////////////////////////////////////
-
 	const pickImage = async () => {
 		const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 		if (status !== 'granted') {
@@ -93,12 +92,13 @@ const SelectPhotos = ({ route }) => {
 
 			// Endroit du stockage de l'image
 			const storageRef = ref(storage, `profils_images/${user.uid}/${fileName}`);
-			console.log('Storage reference:', storageRef);
 
 			// Upload the file
 			await uploadBytes(storageRef, blob, {
 				contentType: file.mimeType || 'image/jpeg',
-			});
+			})
+				.then((res)=>console.log('Storage reference:',res.ref))
+				.catch((err)=>console.log('While uploading a file',err))
 
 			console.log('Image uploaded...');
 
@@ -115,7 +115,6 @@ const SelectPhotos = ({ route }) => {
 		}
 	};
 
-
 	const saveImageInDb = async (url) => {
 		await updateDoc(doc(db, 'Users', user.uid), {
 			photoURL: url
@@ -123,12 +122,6 @@ const SelectPhotos = ({ route }) => {
 			.then(() => console.log('photo in db updated !'))
 			.then(() => user.reload())
 	}
-
-	useEffect(() => {
-		console.log(urlParams)
-		if (urlParams)
-			setImage(urlParams)
-	}, [urlParams])
 
 	return (
 		<View style={styles.container}>
