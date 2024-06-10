@@ -6,7 +6,7 @@
  - NPM
       - Dans un invite de commande tapez :
        ```bash
-         npm install -g npm
+       npm install -g npm
        ```
 ## À installer sur le cellulaire
 https://expo.dev/go
