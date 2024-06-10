@@ -1,50 +1,65 @@
-# Welcome to your Expo app 👋
+# Municipalité des îles-de-la-Madeleine
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## À installer sur l'ordinateur
+ - Node.js : https://nodejs.org/en/download/prebuilt-installer
+ - Visual Studio Code (Pour voir ou modifier le code source) : https://code.visualstudio.com/Download
+ - NPM
+      - Dans un invite de commande tapez :
+       ```
+       npm install -g npm
+       ```
+## À installer sur le cellulaire
+https://expo.dev/go
+Expo Go vous permettra de rouler l'application sur votre cellulaire personnel.
 
-## Get started
+## Avant toute chose
 
-1. Install dependencies
+1. Télécharger le code source de ce Github : https://github.com/ipaquetteMuniles/MobileMuniles
+2. Ouvrez le dans visual studio
+3. Partez le serveur
+
+## Pour partir le serveur
+
+### 1. Installer les dépendances
 
    ```bash
-   npm install
+   npx expo install
+   npm install --global eas-cli
    ```
 
-2. Start the app
+### 2. Partir l'application dans un invite de commande
+Avant toute chose veuillez vous assurez que vous êtes sur un WiFi qui n'a aucune restrictions (Muniles), pas (Muniles-Public)
+1. Premièrement, vous devez ouvrir un invite de commande et partir le serveur
+   -Windows et rechercher "invite de commande"
 
    ```bash
-    npx expo start
+    npx expo start --tunnel --clear
    ```
+#### Arguments pour bien partir le serveur
+   - (--tunnel) Pour créer un tunnel entre le serveur et votre téléphone cellulaire, permet de rouler l'application sur un WiFi avec restriction
+   - (--clear) Vide la cache du serveur et repart l'aplication à neuf
+   - (--localhost) Roule le serveur sur une adresse ip locale
+   - (--offline) Roule le serveur sans connexion
 
-In the output, you'll find options to open the app in a
+Tout autres informations sur les arguments possibles : https://docs.expo.dev/more/expo-cli/
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+2. Deuxièmement, scannez le code QR et ouvrez le lien
+![image](https://github.com/ipaquetteMuniles/MobileMuniles/assets/169171284/d0996443-7bba-435c-a69f-648c8229a158)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Assurez vous d'être sur le mode "Expo Go". Vous pouvez changer de mode en cliquant sur la touche "S" du clavier.
+![image](https://github.com/ipaquetteMuniles/MobileMuniles/assets/169171284/dd0df849-a933-426c-a1d8-708a792c530b)
 
-## Get a fresh project
+4. Troisièmement, apprécier l'aplication qui roule sur un serveur que vous venez tout juste de créer
 
-When you're ready, run:
+## Pour de l'aide sur les commandes
+   ```bash
+    npx expo --help
+   ```   
 
-```bash
-npm run reset-project
-```
+## Contacter iohann au besoin
+iohann.paquette.1@ens.etsmtl.ca
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
+## Liens importants
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- https://expo.dev/tools
