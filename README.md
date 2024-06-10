@@ -5,7 +5,7 @@
  - Visual Studio Code (Pour voir ou modifier le code source) : https://code.visualstudio.com/Download
  - NPM
       - Dans un invite de commande tapez :
-       ```bash
+       ```
        npm install -g npm
        ```
 ## À installer sur le cellulaire
