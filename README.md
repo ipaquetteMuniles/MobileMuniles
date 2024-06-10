@@ -1,21 +1,30 @@
 # Municipalité des îles-de-la-Madeleine
 
-## À installer
-Node.js : https://nodejs.org/en/download/prebuilt-installer
-Visual Studio Code (Pour voir ou modifier le code source) : https://code.visualstudio.com/Download
-
+## À installer sur l'ordinateur
+ - Node.js : https://nodejs.org/en/download/prebuilt-installer
+ - Visual Studio Code (Pour voir ou modifier le code source) : https://code.visualstudio.com/Download
+ - NPM
+      - Dans un invite de commande tapez :
+       ```bash
+         npm install -g npm
+       ```
 ## À installer sur le cellulaire
 https://expo.dev/go
 Expo Go vous permettra de rouler l'application sur votre cellulaire personnel.
+
+## Avant toute chose
+
+1. Télécharger le code source de ce Github : https://github.com/ipaquetteMuniles/MobileMuniles
+2. Ouvrez le dans visual studio
+3. Partez le serveur
 
 ## Pour partir le serveur
 
 ### 1. Installer les dépendances
 
    ```bash
-   npm install
-   ou encore
-   yarn
+   npx expo install
+   npm install --global eas-cli
    ```
 
 ### 2. Partir l'application dans un invite de commande
@@ -50,5 +59,7 @@ Assurez vous d'être sur le mode "Expo Go". Vous pouvez changer de mode en cliqu
 ## Contacter iohann au besoin
 iohann.paquette.1@ens.etsmtl.ca
 
+## Liens importants
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- https://expo.dev/tools
