@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////
 // Municipalité des îles-de-la-Madeleine
 // Auteur :Iohann Paquette
-// Date : 2024-05-07 
+// Date : 2024-05-07
 // Accueil
 ////////////////////////////////////////////////
 
@@ -21,11 +21,11 @@ import {
     ActivityIndicator,
     Dimensions,
     TouchableOpacity,
-    RefreshControl
+    RefreshControl, TextInput
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
-import {doc, getDoc, getFirestore, setDoc, updateDoc} from 'firebase/firestore';
+import {doc, getDoc,getDocs,collection, getFirestore, setDoc, updateDoc,addDoc} from 'firebase/firestore';
 import { useLocalSearchParams } from "expo-router";
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
@@ -35,6 +35,8 @@ import * as TaskManager from 'expo-task-manager';
 import Constants from 'expo-constants'
 import { Pedometer, Accelerometer } from 'expo-sensors';
 import WebView from 'react-native-webview';
+import {Feather} from "@expo/vector-icons";
+
 ////////////////////////////////////////////////
 //Composants
 ////////////////////////////////////////////////
@@ -45,7 +47,7 @@ import Slideshow from '@/components/Slideshow';
 import Loading from '@/components/loadingComponent';
 import FormInput from '@/components/FormInput';
 import Popup from "@/components/Popup";
-import {Feather} from "@expo/vector-icons";
+import AstuceInputFlatlist from "@/components/astuceInputFlatlist";
 
 ////////////////////////////////////////////////
 //App
@@ -57,6 +59,9 @@ export default function Home() {
 
     const [userInfo, setUserInfo] = useState();
     const [formationEffectue, setFormationDone] = useState(false);
+
+    const [populationAstuces,setPopulationAstuces] = useState([])
+    const [textAstuce,setTextAstuce] = useState("")
 
     const [isPedometerAvailable, setIsPedometerAvailable] = useState('checking');
     const [pastStepCount, setPastStepCount] = useState(0);
@@ -95,7 +100,7 @@ export default function Home() {
         // Register the pedometer task
         TaskManager.defineTask(PEDOMETER_TASK, async () => {
             console.log('Pedometer task running');
-    
+
             // Log the current and past step counts for debugging
             console.log('Current step count:', currentStepCount);
             console.log('Past step count:', pastStepCount);
@@ -163,13 +168,13 @@ export default function Home() {
         });
         /*
         Selon l'Agence de protection de l'environnement des États-Unis (EPA),
-        la combustion d'un gallon d'essence produit environ 8,89 kg de dioxyde 
-        de carbone (CO2). En supposant qu'une voiture moyenne consomme environ 9,4 litres d'essence 
+        la combustion d'un gallon d'essence produit environ 8,89 kg de dioxyde
+        de carbone (CO2). En supposant qu'une voiture moyenne consomme environ 9,4 litres d'essence
         pour parcourir 100 km, cela équivaut à environ 2,35 kg de CO2 par litre d'essence.
 
-        Si l'on considère qu'une personne marche à environ 5 km/h, 
-        elle peut parcourir 5 km en une heure. Si une voiture consomme environ 9,4 
-        litres pour parcourir 100 km, elle consommerait environ 0,47 litre pour parcourir 5 km. 
+        Si l'on considère qu'une personne marche à environ 5 km/h,
+        elle peut parcourir 5 km en une heure. Si une voiture consomme environ 9,4
+        litres pour parcourir 100 km, elle consommerait environ 0,47 litre pour parcourir 5 km.
         Cela équivaut à environ 1,11 kg de CO2 évité pour chaque 5 km parcourus à pied plutôt qu'en voiture.
          */
         let nbPas = currentStepCount;
@@ -404,6 +409,9 @@ export default function Home() {
                             <Slideshow />
                         </View>
 
+                        {/* Astuces de la société */}
+                        <AstuceInputFlatlist nbItemToRender={3} fromPage={'accueil'} navigation={navigation}/>
+
                         <View>
                             <View style={styles.section}>
                                 <Text style={styles.undertitle}>Compostage</Text>
@@ -567,5 +575,54 @@ const styles = StyleSheet.create({
     webview: {
         width: '100%',
         height: 450,
-    }
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        marginBottom: 20,
+    },
+    input: {
+        flex: 1,
+        borderColor: '#cccccc',
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 10,
+        marginRight: 10,
+    },
+    postContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 2,
+        elevation: 3,
+    },
+    postHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    avatar: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        marginRight: 10,
+    },
+    postUserInfo: {
+        flex: 1,
+    },
+    postUserName: {
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    postDate: {
+        color: '#888',
+        fontSize: 14,
+    },
+    postText: {
+        fontSize: 16,
+        lineHeight: 22,
+    },
 });

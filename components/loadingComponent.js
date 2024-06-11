@@ -7,7 +7,7 @@
 ////////////////////////////////////////////////
 //Bibliothèques
 ////////////////////////////////////////////////
-import { StyleSheet, Text, View,ActivityIndicator,Image } from 'react-native';
+import { StyleSheet, Text, View,Image } from 'react-native';
 
 ////////////////////////////////////////////////
 //Composants
@@ -20,7 +20,6 @@ const Loading = ()=> {
     const uri_image_loading = 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fcoureurse.gif?alt=media&token=bc1b55b4-9fb4-48ea-a337-a540e43ba8b1'
   return (
    <View style={styles.container}>
-        <ActivityIndicator animating={true} size={'large'}/>
            <Image
                source={{uri:uri_image_loading}}
                 style={{
