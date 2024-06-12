@@ -87,17 +87,12 @@ const Formation = () => {
             ) : (
                 <View>
                     <Text style={styles.endText}>Merci d'avoir répondu aux questions de la formation</Text>
-                    
+
                         <FormButton
                             buttonTitle="Retour"
-                            onPress={()=>{
-                                if(auth.currentUser)
-                                    navigation.navigate("accueil")
-                                else
-                                    navigation.navigate("index")
-                            }}
+                            onPress={()=>navigation.navigate("accueil")}
                         />
-                   
+
                 </View>
             )}
         </View>

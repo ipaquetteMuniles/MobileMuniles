@@ -7,26 +7,32 @@
 ////////////////////////////////////////////////
 // Bibliothèques
 ////////////////////////////////////////////////
-import { StyleSheet, Text, View, FlatList, TextInput, Image, ActivityIndicator } from 'react-native';
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore } from "firebase/firestore";
+import { StyleSheet, Text, View, FlatList, TextInput, Image, Animated } from 'react-native';
+import {addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc} from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { Feather } from "@expo/vector-icons";
-import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
+import { Swipeable,RectButton,GestureHandlerRootView } from 'react-native-gesture-handler';
 
 ////////////////////////////////////////////////
 // Composants
 ////////////////////////////////////////////////
 import FormButton from "../components/FormButton";
 import LoadingComponent from "../components/loadingComponent";
+import Popup from "@/components/Popup";
 ////////////////////////////////////////////////
 // App
 ////////////////////////////////////////////////
 const AstuceInputFlatlist = ({ navigation, nbItemToRender, fromPage }) => {
     const [populationAstuces, setPopulationAstuces] = useState([]);
     const [textAstuce, setTextAstuce] = useState("");
+    const [wantToEdit, setWantToEdit] = useState(false);
+    const [editDocId, setEditDocId] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    //Popup
+    const [textModal, setTextModal] = useState('');
+    const [modalVisible, setModalVisible] = useState(false);
 
     const auth = getAuth();
     const db = getFirestore();
@@ -64,6 +70,8 @@ const AstuceInputFlatlist = ({ navigation, nbItemToRender, fromPage }) => {
             });
 
             array = await Promise.all(promises);
+
+            array.sort((a, b) => b.item.date.toDate() - a.item.date.toDate());
         } catch (err) {
             console.log(err);
         }
@@ -86,17 +94,69 @@ const AstuceInputFlatlist = ({ navigation, nbItemToRender, fromPage }) => {
             };
 
             await addDoc(collection(db, tableName), data)
-                .then(() => {
+                .then(async (res) => {
                     console.log('astuce ajoute');
                     setTextAstuce("");
+
+                    await updateDoc(doc(db, tableName, res.id), {
+                        docId: res.id
+                    })
+                        .catch((err) => console.log(err))
+
+                    getAstucesPopulation()
                 })
                 .catch((err) => {
                     console.log(err);
                     setTextModal("Erreur lors de l'ajout de l'astuce, réessayer plus tard ...");
                     setModalVisible(true);
-                });
+                })
         }
     };
+
+    const editAstuce = async (item) => {
+        const tableName = 'AstucesPopulation';
+
+        if (!textAstuce) {
+            setTextModal('Veuillez ajouter plus de texte pour modifier votre astuce !');
+            setModalVisible(true);
+            return;
+        } else {
+            const data = {
+                uid: auth.currentUser.uid,
+                date: new Date(),
+                text: textAstuce,
+            };
+
+            await updateDoc(doc(db, tableName, item.item.docId), data)
+                .then(() => {
+                    setTextModal('Astuce modifiée !')
+                    setModalVisible(true)
+
+                    setWantToEdit(false)
+                    setEditDocId(null)
+                    setTextAstuce("");
+
+                    getAstucesPopulation()
+                })
+                .catch((err) => {
+                    console.log(err);
+                    setTextModal("Erreur lors de la modification de l'astuce, réessayer plus tard ...");
+                    setModalVisible(true);
+                })
+        }
+    }
+
+    const supprimerAstuces = async (id) => {
+        const tableName = 'AstucesPopulation';
+        console.log(id)
+        await deleteDoc(doc(db, tableName, id))
+            .then(() => {
+                setTextModal('Élément supprimé !')
+                setModalVisible(true)
+
+                getAstucesPopulation()
+            })
+    }
 
     useEffect(() => {
         setLoading(true);
@@ -104,44 +164,147 @@ const AstuceInputFlatlist = ({ navigation, nbItemToRender, fromPage }) => {
         setLoading(false);
     }, []);
 
-    const translateX = useSharedValue(0);
-
-    const panGestureEvent = (event) => {
-        /*translateX.value = event.translationX;*/
-        console.log(event.translationX)
+    const renderRightActions = (progress, dragX, docId) => {
+        const trans = dragX.interpolate({
+            inputRange: [0, 50, 100, 101],
+            outputRange: [-20, 0, 0, 1],
+        });
+        return (
+            <RectButton style={styles.RightActions} onPress={() => supprimerAstuces(docId)}>
+                <Animated.Text
+                    style={[
+                        styles.actionText,
+                        {
+                            transform: [{translateX: trans}],
+                        },
+                    ]}>
+                    <Feather name={'trash'} color={'white'} size={30}/>
+                </Animated.Text>
+            </RectButton>
+        );
     };
 
-    const panGestureEnd = (event) => {
-        if (event.translationX > 100) {
-            //runOnJS(handleDelete)(item.id);
-            console.log('ici')
+    const renderLeftActions = (progress, dragX, item) => {
+        const trans = dragX.interpolate({
+            inputRange: [-60, 0],
+            outputRange: [1, 0],
+            extrapolate: 'clamp',
+        });
+
+        return (
+            <RectButton style={styles.LeftActions} onPress={() => {
+                setTextAstuce(item.item.text);
+                setWantToEdit(true);
+                setEditDocId(item.item.docId)
+            }}>
+                <Animated.Text
+                    style={[
+                        styles.actionText,
+                        {
+                            transform: [{translateX: trans}],
+                        },
+                    ]}>
+                    <Feather name={'edit'} color={'white'} size={30}/>
+                </Animated.Text>
+            </RectButton>
+        );
+    }
+
+    if (loading) return <LoadingComponent/>;
+
+    const renderItem = ({item, index}) => {
+        let d = item.item.date.toDate();
+        let newDate;
+        let isRecent = (new Date().getTime() - d.getTime()) < (24 * 60 * 60 * 1000);
+
+        if(isRecent){
+            const hours = d.getHours();
+            const minutes = d.getMinutes().toString().padStart(2, '0');
+            newDate = `${hours}:${minutes}`;
         }
-        translateX.value = withSpring(0);
+        else
+            newDate = d.toLocaleDateString()
+
+        const contex = (
+            <View style={styles.postContainer}>
+                <View style={styles.postHeader}>
+                    <Image
+                        style={styles.avatar}
+                        source={{uri: item.user.photoURL}}
+                    />
+                    <View style={styles.postUserInfo}>
+                        <Text style={styles.postUserName}>{item.user.displayName}</Text>
+                        <Text style={styles.postDate}>{newDate}</Text>
+                    </View>
+                </View>
+                <Text style={styles.postText}>{item.item.text}</Text>
+            </View>
+        );
+
+        if (!wantToEdit && (auth.currentUser.uid == item.user.uid)) {
+            return (
+                <GestureHandlerRootView>
+                    <Swipeable
+                        friction={2}
+                        renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item.item.docId)}
+                        renderLeftActions={(progress, dragX) => renderLeftActions(progress, dragX, item)}
+                    >
+                        {contex}
+                    </Swipeable>
+                </GestureHandlerRootView>
+            );
+        } else if (editDocId === item.item.docId && wantToEdit) {
+            return (
+                <View style={styles.inputContainer}>
+                    <TextInput
+                        placeholder='Modifier votre astuce'
+                        onChangeText={setTextAstuce}
+                        value={textAstuce}
+                        placeholderTextColor='#999999'
+                        blurOnSubmit
+                        inputMode='text'
+                        returnKeyType='done'
+                        showSoftInputOnFocus={false}
+                        style={styles.input}
+                    />
+                    <View style={{flex: 2, flexDirection: 'row'}}>
+                        <FormButton
+                            onPress={() => editAstuce(item)}
+                            buttonTitle='Modifier'
+                            backgroundColor='green'
+                        />
+                        <FormButton
+                            onPress={() => {
+                                setWantToEdit(false);
+                                setEditDocId(null);
+                                setTextAstuce("");
+                            }}
+                            buttonTitle='Annuler'
+                            backgroundColor='red'
+                        />
+                    </View>
+                </View>
+            );
+        } else {
+            return contex;
+        }
     };
 
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateX: translateX.value }],
-        };
-    });
-
-    if (loading) return <LoadingComponent />;
     return (
-        <GestureHandlerRootView style={styles.container}>
-            <View style={{ margin: 20 }}>
-                <View style={{ flex: 2, flexDirection: 'row' }}>
-                    <Text style={styles.title}>Astuces écoénergétique de la société</Text>
-                    {/* Ouvrir en plus grand */}
-                    {fromPage === 'accueil' && (
-                        <Feather
-                            name={'arrow-right'}
-                            onPress={() => navigation.navigate("forum")}
-                            size={30}
-                            color={'blue'}
-                        />
-                    )}
-                </View>
+        <View style={styles.container}>
+            <View style={{flex: 2, flexDirection: 'row'}}>
+                <Text style={styles.title}>Astuces écoénergétique de la société</Text>
+                {fromPage === 'accueil' && (
+                    <Feather
+                        name={'arrow-right'}
+                        onPress={() => navigation.navigate("forum")}
+                        size={30}
+                        color={'blue'}
+                    />
+                )}
+            </View>
 
+            {!wantToEdit && (
                 <View style={styles.inputContainer}>
                     <TextInput
                         placeholder='Ajouter une astuce écoénergétique..'
@@ -160,47 +323,26 @@ const AstuceInputFlatlist = ({ navigation, nbItemToRender, fromPage }) => {
                         backgroundColor='green'
                     />
                 </View>
+            )}
 
-                <FlatList
-                    maxToRenderPerBatch={nbItemToRender}
-                    refreshing={loading}
-                    data={populationAstuces}
-                    keyExtractor={(item, index) => index.toString()}
-                    renderItem={({ item,index }) =>
-                        {
-                            const itemTranslateX = {};
+            <Text style={styles.undertitle}>
+                Glisser vers la droite pour
+                <Feather name={'trash'} color={'red'} size={20}/>
+                et gauche pour <Feather name={'edit'} color={'green'} size={20}/>
+                vos astuces
+            </Text>
 
-                            if (!itemTranslateX[index]) {
-                                itemTranslateX[index] = 0;
-                            }
-
-                            return(
-                                <PanGestureHandler onGestureEvent={()=>panGestureEvent(index)} onEnded={panGestureEnd}>
-                                    <Animated.View style={[styles.box, animatedStyle]}>
-                                        <View style={styles.postContainer}>
-                                            <View style={styles.postHeader}>
-                                                <Image
-                                                    style={styles.avatar}
-                                                    source={{ uri: item.user.photoURL }}
-                                                />
-                                                <View style={styles.postUserInfo}>
-                                                    <Text style={styles.postUserName}>{item.user.displayName}</Text>
-                                                    <Text style={styles.postDate}>{new Date(item.item.date.toDate()).toLocaleDateString()}</Text>
-                                                </View>
-                                            </View>
-                                            <Text style={styles.postText}>{item.item.text}</Text>
-                                        </View>
-                                    </Animated.View>
-                                </PanGestureHandler>
-                            )
-                        }
-
-                    }
-                />
-            </View>
-        </GestureHandlerRootView>
+            <FlatList
+                maxToRenderPerBatch={nbItemToRender}
+                refreshing={loading}
+                data={populationAstuces}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={renderItem}
+            />
+            <Popup text={textModal} setModalVisible={setModalVisible} modalVisible={modalVisible}/>
+        </View>
     );
-};
+}
 
 export default AstuceInputFlatlist;
 
@@ -278,4 +420,45 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 3,
     },
+    actionText: {
+        color:'white',
+        fontSize: 16,
+        padding: 10,
+        alignItems:'center',
+        justifyContent:'center'
+    },
+    RightActions: {
+        alignItems: 'center',
+        flex: 1,
+        justifyContent: 'center',
+        backgroundColor:'red',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 2,
+        elevation: 3,
+    },
+    LeftActions: {
+        alignItems: 'center',
+        flex: 1,
+        justifyContent: 'center',
+        backgroundColor:'#619e15',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 2,
+        elevation: 3,
+    },
+    undertitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#333',
+    }
 });

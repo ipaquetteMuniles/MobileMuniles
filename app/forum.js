@@ -28,7 +28,6 @@ const Forum = ()=>
 
     return (
        <ScrollView>
-           <Text style={styles.title}>Forum des astuces écoénergétique des îles de la madeleine</Text>
            <AstuceInputFlatlist nbItemToRender={100}/>
        </ScrollView>
     );

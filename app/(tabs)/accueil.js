@@ -290,7 +290,7 @@ export default function Home() {
         getUserInfo();
         saveEffortsInDb()
 
-        getBicycleData()
+        //getBicycleData()
         subscribeToPedometer();
         calculReductionGesMarche()
 
