@@ -19,7 +19,7 @@ import {
     from 'react-native';
 
 import MapView, { Marker, Polyline } from 'react-native-maps';
-import {setDoc, doc, getFirestore, updateDoc} from "firebase/firestore";
+import {setDoc,getDoc,doc, getFirestore, updateDoc,arrayUnion,Timestamp} from "firebase/firestore";
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import * as TaskManager from 'expo-task-manager';
@@ -50,6 +50,7 @@ const Map = () => {
     const [tracking, setTracking] = useState(false);
     const [showEffort, setShowEffort] = useState(false);
     const [effortType,setEffortType] = useState("");
+    const [effortId,setEffortId] = useState()
 
     const [textModal, setTextModal] = useState("");
     const [modalVisible, setModalVisible] = useState(false);
@@ -151,18 +152,28 @@ const Map = () => {
     }
 
     const startVelo = async () => {
-        //partir une effort
-        await startEffort()
 
-        //const tag = `${auth.currentUser.uid}_${new Date().getDate()}`;
+        await startEffort();
 
-        //save in db
-        await setDoc(doc(db,'Efforts_Bike',auth.currentUser.uid),{
-            startTime : new Date().getTime(),
-            uid:auth.currentUser.uid,
-            type:effortType
-        })
-            .catch((err)=>console.log(err))
+        const userDocRef = doc(db, 'Efforts_Bike', auth.currentUser.uid)
+        const id = `${auth.currentUser.uid}_${new Date().getTime()}`
+        const newEffort = {
+            startTime: Timestamp.fromDate(new Date()),
+            uid:  auth.currentUser.uid,
+            type: effortType,
+            effortId: id
+        };
+
+        await setDoc(userDocRef, {
+            efforts: arrayUnion(newEffort)
+        }, { merge: true })
+            .then(() => {
+                console.log('Effort started successfully!');
+                setEffortId(id);
+            })
+            .catch((err) => {
+                console.error('Error starting effort: ', err);
+            });
     };
 
     const startWalk = async () => {
@@ -182,16 +193,49 @@ const Map = () => {
         console.log('arret de la course')
     }
 
-    const stopVelo = async() =>{
-        console.log('arret du velo')
+    const stopVelo = async () => {
+        const user = auth.currentUser;
+        const userDocRef = doc(db, 'Efforts_Bike', user.uid);
 
-        await updateDoc(doc(db,'Efforts_Bike',auth.currentUser.uid),{
-            endTime:new Date().getTime(),
-            Distance: distance
-        })
-            .catch((err)=>console.log(err))
+        try {
+            const docSnapshot = await getDoc(userDocRef);
+
+            if (!docSnapshot.exists()) {
+                console.error('Effort document does not exist:', user.uid);
+                return;
+            }
+
+            const efforts = docSnapshot.data().efforts || [];
+            const effortIndex = efforts.findIndex(effort => effort.effortId === effortId);
+
+            if (effortIndex === -1) {
+                console.error('Effort not found:', effortId);
+                return;
+            }
+
+            const updatedEffort = {
+                ...efforts[effortIndex],
+                endTime: Timestamp.fromDate(new Date()),
+                distance: distance
+            };
+
+            // Create a new array with the updated effort
+            const updatedEfforts = [
+                ...efforts.slice(0, effortIndex),
+                updatedEffort,
+                ...efforts.slice(effortIndex + 1)
+            ];
+
+            await updateDoc(userDocRef, {
+                efforts: updatedEfforts
+            });
+
+            console.log('Effort stopped successfully!');
+            setEffortId(null);
+        } catch (err) {
+            console.error('Error stopping effort:', err);
+        }
     }
-
     const WatchErosionSectors = async () => {
        if(location){
            erosions_db.forEach((element) => {
@@ -224,7 +268,6 @@ const Map = () => {
     }, []);
 
     useEffect(() => {
-        console.log(notifyErosionPoints)
             const interval = setInterval(() => {
                 if(notifyErosionPoints)
                     WatchErosionSectors()

@@ -7,7 +7,16 @@
 ////////////////////////////////////////////////
 // Bibliothèques
 ////////////////////////////////////////////////
-import {StyleSheet, Text, View, ScrollView, TouchableOpacity,Image,RefreshControl} from 'react-native';
+import {
+    StyleSheet,
+    Text,
+    View,
+    ScrollView,
+    TouchableOpacity,
+    Image,
+    RefreshControl,
+    ActivityIndicator
+} from 'react-native';
 import {
     getAuth,
     reauthenticateWithCredential,
@@ -241,20 +250,17 @@ const Profil = () => {
 
                         {/* Photo de profil */}
                         <View style={{margin:10}}>
-                           {/* <TouchableOpacity onPress={()=>{
+                            <TouchableOpacity onPress={()=>{
                                 navigation.navigate('selectPhotos');
                                 router.setParams({urlParams:photoUrl})
-                            }}>*/}
+                            }}>
                                 <Image
                                     resizeMode={'contains'}
                                     source={{uri:photoUrl}}
                                     style={{height:150,width:150,borderColor:'gray',borderWidth:1}}
+                                    loadingIndicatorSource={no_profile_pic_url}
                                 />
-
-{/*
                             </TouchableOpacity>
-*/}
-
                         </View>
 
                         <View>
