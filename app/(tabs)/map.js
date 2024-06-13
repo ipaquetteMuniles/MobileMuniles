@@ -22,7 +22,6 @@ import MapView, { Marker, Polyline } from 'react-native-maps';
 import {setDoc,getDoc,doc, getFirestore, updateDoc,arrayUnion,Timestamp} from "firebase/firestore";
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
-import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
 import { Feather } from "@expo/vector-icons";
 import haversine from 'haversine';
@@ -35,6 +34,7 @@ import { erosions_db } from '../../EROSIONS_DB';
 import FormButton from "../../components/FormButton";
 import Loading from "../../components/loadingComponent";
 import Popup from "../../components/Popup";
+import {Pedometer} from "expo-sensors";
 ////////////////////////////////////////////////
 // App
 ////////////////////////////////////////////////
@@ -43,10 +43,10 @@ const Map = () => {
     const [locationPermission, setLocationPermission] = useState(false);
     const [showErosionsPoints,setErosionsPoints] = useState(false)
     const [notifyErosionPoints,setNotifyErosionsPoints] = useState(true)
-    const [errorMsg, setErrorMsg] = useState("");
 
     const [route, setRoute] = useState([]);
     const [distance, setDistance] = useState(0);
+    const [currentSteps, setCurrentSteps] = useState(0);
     const [tracking, setTracking] = useState(false);
     const [showEffort, setShowEffort] = useState(false);
     const [effortType,setEffortType] = useState("");
@@ -58,8 +58,9 @@ const Map = () => {
     const db = getFirestore()
     const auth = getAuth()
 
-    const threshold_distance_erosion = 0.6;//limite proximite erosion
+    const threshold_distance_erosion = 0.6;
     const location_refresh_time = 100000; // in ms
+    let stepSubscription;
 
     const requestPermissions = async () => {
         const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
@@ -78,32 +79,32 @@ const Map = () => {
         }
     };
 
-    const startActivity = async (type) => {
+    const stopActivity = async (type) => {
         switch (type) {
-            case 'velo':
-                await startVelo();
+            case 'bike':
+                await stopEffort('Efforts_Bike');
                 break;
             case 'walk':
-                await startWalk();
+                await stopEffort('Efforts_Walk');
                 break;
             case 'run':
-                await startRun();
+                await stopEffort('Efforts_Run');
                 break;
             default:
                 break;
         }
     };
 
-    const stopActivity = async (type) => {
+    const startActivity = async (type) => {
         switch (type) {
-            case 'velo':
-                await stopVelo();
+            case 'bike':
+                await startEffort('Efforts_Bike','bike');
                 break;
             case 'walk':
-                await stopWalk();
+                await startEffort('Efforts_Walk','walk');
                 break;
             case 'run':
-                await stopRun();
+                await startEffort('Efforts_Run','run');
                 break;
             default:
                 break;
@@ -130,7 +131,7 @@ const Map = () => {
         }
     }
 
-    const startEffort = async () =>{
+    const startEffort = async (tableName,type) =>{
         await Location.watchPositionAsync(
             {
                 accuracy: Location.Accuracy.BestForNavigation,
@@ -149,18 +150,23 @@ const Map = () => {
                 });
             }
         );
-    }
+        if(type == 'run' || type == 'walk')
+        {
+            const isAvailable = await Pedometer.isAvailableAsync();
+            if (isAvailable) {
+                setCurrentSteps(0)
+                stepSubscription = Pedometer.watchStepCount(result => {
+                    setCurrentSteps(result.steps);
+                });
+            }
+        }
 
-    const startVelo = async () => {
-
-        await startEffort();
-
-        const userDocRef = doc(db, 'Efforts_Bike', auth.currentUser.uid)
+        const userDocRef = doc(db, tableName, auth.currentUser.uid)
         const id = `${auth.currentUser.uid}_${new Date().getTime()}`
         const newEffort = {
             startTime: Timestamp.fromDate(new Date()),
             uid:  auth.currentUser.uid,
-            type: effortType,
+            type: type,
             effortId: id
         };
 
@@ -168,34 +174,16 @@ const Map = () => {
             efforts: arrayUnion(newEffort)
         }, { merge: true })
             .then(() => {
-                console.log('Effort started successfully!');
                 setEffortId(id);
             })
             .catch((err) => {
                 console.error('Error starting effort: ', err);
             });
-    };
-
-    const startWalk = async () => {
-
-    };
-
-    const startRun = async () => {
-        // Similar implementation to startVelo
-        // Adjust as needed for running
-    };
-
-    const stopWalk = async() =>{
-        console.log('arret de la marche')
     }
 
-    const stopRun = async() =>{
-        console.log('arret de la course')
-    }
-
-    const stopVelo = async () => {
+    const stopEffort = async (tableName)=> {
         const user = auth.currentUser;
-        const userDocRef = doc(db, 'Efforts_Bike', user.uid);
+        const userDocRef = doc(db, tableName, user.uid);
 
         try {
             const docSnapshot = await getDoc(userDocRef);
@@ -216,26 +204,51 @@ const Map = () => {
             const updatedEffort = {
                 ...efforts[effortIndex],
                 endTime: Timestamp.fromDate(new Date()),
-                distance: distance
+                distance: distance,
+                totalSteps:currentSteps
             };
 
-            // Create a new array with the updated effort
+            if (stepSubscription) {
+                stepSubscription.remove();
+            }
+
             const updatedEfforts = [
                 ...efforts.slice(0, effortIndex),
                 updatedEffort,
                 ...efforts.slice(effortIndex + 1)
             ];
 
+
             await updateDoc(userDocRef, {
                 efforts: updatedEfforts
             });
 
-            console.log('Effort stopped successfully!');
+            let string = ''
+
+            switch (effortType)
+            {
+                case 'bike':
+                    string = 'vélo';
+                    break;
+                case 'run':
+                    string = 'course';
+                    break;
+                case 'walk':
+                    string = 'marche';
+                    break
+                default:
+                    break;
+
+            }
+            setEffortType(null)
+            setTextModal(`Bravo pour votre entrainement de ${string}`)
+            setModalVisible(true)
             setEffortId(null);
         } catch (err) {
             console.error('Error stopping effort:', err);
         }
     }
+
     const WatchErosionSectors = async () => {
        if(location){
            erosions_db.forEach((element) => {
@@ -315,7 +328,9 @@ const Map = () => {
                             title={element.title}
                         />
                     ))}
-                    <Polyline coordinates={route} strokeWidth={5} strokeColor="blue" />
+                    {tracking && (
+                        <Polyline coordinates={route} strokeWidth={5} strokeColor="blue" />
+                    )}
                 </MapView>
 
             <View style={styles.topContainer}>
@@ -352,7 +367,7 @@ const Map = () => {
                                 <Text style={{fontWeight:'bold'}}>Entrainements</Text>
                                 <TouchableOpacity
                                     style={styles.listeItem}
-                                    onPress={() => handleStartStop('velo')}
+                                    onPress={() => handleStartStop('bike')}
                                 >
                                     <Text style={styles.listeItemText}>Vélo</Text>
                                 </TouchableOpacity>
@@ -392,7 +407,13 @@ const Map = () => {
                         backgroundColor="#060270"
                         color="white"
                     />
+
                     <Text style={styles.statsText}>Distance : {distance.toFixed(2)} km</Text>
+                    {(effortType == 'run' || effortType == 'walk') && (
+                        <View>
+                            <Text style={styles.statsText}>Nombre de pas :{currentSteps}</Text>
+                        </View>
+                    )}
                 </View>
             )}
 

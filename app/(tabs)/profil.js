@@ -258,7 +258,6 @@ const Profil = () => {
                                     resizeMode={'contains'}
                                     source={{uri:photoUrl}}
                                     style={{height:150,width:150,borderColor:'gray',borderWidth:1}}
-                                    loadingIndicatorSource={no_profile_pic_url}
                                 />
                             </TouchableOpacity>
                         </View>

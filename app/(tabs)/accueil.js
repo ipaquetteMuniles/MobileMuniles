@@ -25,7 +25,7 @@ import {
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
-import {doc, getDoc,getDocs,collection, getFirestore, setDoc, updateDoc,addDoc} from 'firebase/firestore';
+import {doc, getDoc, getFirestore, updateDoc,} from 'firebase/firestore';
 import { useLocalSearchParams } from "expo-router";
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
@@ -60,12 +60,12 @@ export default function Home() {
     const [userInfo, setUserInfo] = useState();
     const [formationEffectue, setFormationDone] = useState(false);
 
-    const [populationAstuces,setPopulationAstuces] = useState([])
-    const [textAstuce,setTextAstuce] = useState("")
-
     const [isPedometerAvailable, setIsPedometerAvailable] = useState('checking');
     const [pastStepCount, setPastStepCount] = useState(0);
     const [currentStepCount, setCurrentStepCount] = useState(0);
+    const [stepsInDb,setStepsInDb] = useState(0)
+    const [distanceWalked,setDistanceWalked] = useState(0)
+
     const [nbKiloGesSauve, setKiloGes] = useState(0)
     const NB_PAS = 4200
 
@@ -76,7 +76,7 @@ export default function Home() {
     const CYCLING_THRESHOLD = 0.5;
     const STEP_DURATION = 0.1;
     const [bycicleDistance, setBicycleDistance] = useState(0)
-    const [bycicleDuration, setBicycleDuration] = useState(0)
+    const [bycicleDuration, setBicycleDuration] = useState()
     const [nbKiloGesSauveBicycle,setKiloGesBicycle] = useState(0)
 
     const map_url_ocean_level = `https://coastal.climatecentral.org/embed/map/10/-61.5882/47.3635/?theme=sea_level_rise&map_type=year&basemap=roadmap&contiguous=true&elevation_model=best_available&forecast_year=${yearSelection}&pathway=ssp3rcp70&percentile=p50&return_level=return_level_1&rl_model=gtsr&slr_model=ipcc_2021_med`
@@ -92,46 +92,12 @@ export default function Home() {
     //Pédomètre
     ////////////////////////////////////////////////
 
-    const PEDOMETER_TASK = 'PEDOMETER_TASK';
-
-    // Register tasks
-    const registerTasks = async () => {
-
-        // Register the pedometer task
-        TaskManager.defineTask(PEDOMETER_TASK, async () => {
-            console.log('Pedometer task running');
-
-            // Log the current and past step counts for debugging
-            console.log('Current step count:', currentStepCount);
-            console.log('Past step count:', pastStepCount);
-            if (pastStepCount >= NB_PAS) {
-                console.log('Notifying user');
-                await sendNotification();
-                return BackgroundFetch.Result.NewData;
-            }
-            return BackgroundFetch.Result.NoData;
-        });
-    };
-
-    // Start tasks
-    const startTasks = async () => {
-        // Start pedometer task
-        await BackgroundFetch.registerTaskAsync(PEDOMETER_TASK, {
-            minimumInterval: 1, // 1 second for testing, adjust as needed
-            stopOnTerminate: false,
-            startOnBoot: true,
-        });
-
-    };
-
     const subscribeToPedometer = async () => {
 
         const isAvailable = await Pedometer.requestPermissionsAsync();
-        console.log(isAvailable.status)
         setIsPedometerAvailable(String(isAvailable.status));
 
         if (isAvailable) {
-            console.log('pedometer is set ...')
             const end = new Date();
             const start = new Date();
             start.setDate(end.getDate() - 1);
@@ -162,7 +128,7 @@ export default function Home() {
         }
     }
 
-    const calculReductionGesMarche = async () => {
+    const calculReductionGesMarche = () => {
         Pedometer.watchStepCount(result => {
             setCurrentStepCount(result.steps);
         });
@@ -179,30 +145,97 @@ export default function Home() {
          */
         let nbPas = currentStepCount;
         let newPastStepCount = pastStepCount + nbPas;
+
+        //ajouter le nombre de pas des entrainments dans les derniers 24h
+        newPastStepCount += stepsInDb;
         setPastStepCount(newPastStepCount);
 
         let nbKilometres = newPastStepCount / 500; // if each step is 0.5 m
         setKiloGes((nbKilometres * 0.222).toFixed(2)); // assuming 5 km saves 1.11 kg of CO2
     }
 
+    const calculReductionGesBike = (dist)=>{
+        // Facteur d'émission de CO2 en kg/km pour une voiture
+        const co2PerKm = 0.2;
+        if(dist > 0)
+            return (dist * co2PerKm).toFixed(3);
+        else
+            return 0
+    }
+
     ////////////////////////////////////////////////
     //Base de données
     ////////////////////////////////////////////////
+    const getWalkData = async () =>{
+        const tableNames = ['Efforts_Walk','Efforts_Run']
+        let totalSteps = 0;
+        let totalDistances = 0;
 
-    const saveEffortsInDb = async () => {
-        await setDoc(doc(db, 'Efforts_Walk', auth.currentUser.uid), {
-            Date:new Date(),
-            steps: pastStepCount + currentStepCount,
-            uid: auth.currentUser.uid
+        tableNames.forEach(async(table)=>
+        {
+            const docRef = await getDoc(doc(db,table,auth.currentUser.uid))
+
+            if(docRef.exists())
+            {
+                let array = docRef.data().efforts
+                array.map((effort)=>
+                {
+                    if(new Date().getTime() - effort.endTime.toDate().getTime() < (24 * 60 * 60 * 1000))
+                    {
+                        totalDistances += effort.distance;
+                        totalSteps += effort.totalSteps;
+                    }
+
+                })
+            }
         })
-            .catch((err) => console.log('While saving in db', err))
+
+        setStepsInDb(totalSteps)
+        setDistanceWalked(totalDistances)
     }
 
     const getBicycleData = async() =>{
-        await getDoc(doc(db,'Efforts_Walk',auth.currentUser.uid))
+        const tableName = 'Efforts_Bike';
+        await getDoc(doc(db,tableName,auth.currentUser.uid))
             .then((res)=>{
-                console.log(res.data())
+                if(res.exists())
+                {
+                    const data = res.data();
+                    const efforts = data.efforts
+
+                    //Distance parcouru
+                    let TotalDistanceIn24 = 0;
+                    //total temps efforts
+                    let totalTempsEfforts = 0;
+
+                    efforts.map((item,index)=>{
+                        let s = item.startTime.toDate()
+                        let e = item.endTime.toDate()
+                        if(new Date().getTime() - e.getTime() < (24 * 60 * 60 * 1000))
+                        {
+                            //cumule distance
+                            TotalDistanceIn24 = (TotalDistanceIn24 + item.distance) ;
+                            TotalDistanceIn24 = Number(TotalDistanceIn24).toFixed(3);
+
+                            //cumule de temps d'effort
+                            totalTempsEfforts += (e.getTime() -s.getTime())
+                        }
+                    })
+
+                    // Conversion du temps total en millisecondes en minutes
+                    let totalMinutesEfforts = Math.floor(totalTempsEfforts / (1000 * 60));
+                    let totalHoursEfforts = Math.floor(totalMinutesEfforts / 60);
+                    let remainingMinutes = (totalMinutesEfforts % 60).toString().padStart(2, '0');
+
+                    setBicycleDistance(TotalDistanceIn24)
+                    conosole.log(totalHoursEfforts,remainingMinutes)
+                    setBicycleDuration(`${totalHoursEfforts}h:${remainingMinutes}min`)
+
+                    let reduction = calculReductionGesBike(TotalDistanceIn24);
+                    setKiloGesBicycle(reduction)
+                }
             })
+            .catch((err)=>console.log(err))
     }
 
     const getUserInfo = async () => {
@@ -273,24 +306,15 @@ export default function Home() {
 
     }
 
-    const sendNotification = async () => {
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: 'Félicitations!',
-                body: `Vous avez atteint ${NB_PAS} pas aujourd\'hui!`,
-            },
-            trigger: null,
-        });
-    };
-
     const refresh = () => {
         setLoading(true)
         setUrl(map_url_ocean_level)
 
         getUserInfo();
-        saveEffortsInDb()
 
-        //getBicycleData()
+        getBicycleData()
+        getWalkData()
+
         subscribeToPedometer();
         calculReductionGesMarche()
 
@@ -308,11 +332,6 @@ export default function Home() {
 
     }, [auth, formationEffectue,url]);
 
-    //watch background tasks
-    useEffect(() => {
-        registerTasks();
-        startTasks();
-    }, []);
 
     //watch current steps
     useEffect(() => {
@@ -358,6 +377,11 @@ export default function Home() {
                                         <Text style={styles.text}>Pas dans les derniers 24h :
                                             <Text style={{ fontWeight: 'bold' }}>{pastStepCount}</Text>
                                         </Text>
+
+                                        <Text style={styles.text}>Distance marché ou couru dans les derniers 24h :
+                                            <Text style={{ fontWeight: 'bold' }}>{distanceWalked} km</Text>
+                                        </Text>
+
                                         <Text style={{ color: 'green', fontWeight: 10 }}>Pas actuel: + {currentStepCount}</Text>
                                         <Text style={styles.text}>
                                             <Text style={{ fontWeight: 'bold' }}>{nbKiloGesSauve} </Text>
@@ -393,11 +417,15 @@ export default function Home() {
                                     source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/mobilemuniles.appspot.com/o/Images%2Fvelo.gif?alt=media&token=3d9223e1-1228-4be1-a276-00e6c88f641e' }}
                                 />
                                 <View style={{ alignItems: 'center', justifyContent: 'center',width:'50%' }}>
-                                    <Text style={styles.text}>Nombre de kilomètres parcourus en vélo dans les derniers 24h : {bycicleDistance}</Text>
-                                    <Text>Temps de l'effort: {bycicleDuration}</Text>
+                                    <Text style={styles.text}>Nombre de kilomètres parcourus en vélo dans les derniers 24h:
+                                        <Text style={{ fontWeight: 'bold' }}>{bycicleDistance} km</Text>
+                                    </Text>
+
+                                    <Text style={styles.text}>Temps de l'effort: {bycicleDuration}</Text>
                                     <Text style={styles.text}>
                                         <Text style={{ fontWeight: 'bold' }}>{nbKiloGesSauveBicycle} </Text>
-                                        kg de CO2 sauvé</Text>
+                                        kg de CO2 sauvé
+                                    </Text>
                                 </View>
                             </View>
                         </View>

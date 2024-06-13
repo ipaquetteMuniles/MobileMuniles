@@ -97,9 +97,6 @@ const SelectPhotos = () => {
 	const saveImage = async (result) => {
 		try {
 			setLoading(true)
-			if (!result.assets || result.assets.length === 0) {
-				throw new Error('No assets found in the result.');
-			}
 
 			//delete previous photo
 			await deleteImageFromStorage()
@@ -109,15 +106,9 @@ const SelectPhotos = () => {
 
 			const fileName = file.fileName ? file.fileName : `${new Date().getTime()}.jpg`;
 
-			// Log the file information
-			console.log('File info:', file);
-
 			// Convert Uri to Blob
 			const response = await fetch(file.uri);
 			const blob = await response.blob();
-
-			// Log the blob information
-			console.log('Blob info:', blob);
 
 			// Endroit du stockage de l'image
 			const storageRef = ref(storage, `profils_images/${user.uid}/${fileName}`);

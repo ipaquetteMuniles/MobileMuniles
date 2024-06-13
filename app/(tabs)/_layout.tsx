@@ -15,6 +15,7 @@ import * as Notifications from 'expo-notifications'
 import { initializeApp } from "firebase/app";
 import { onAuthStateChanged,initializeAuth,getReactNativePersistence  } from "firebase/auth";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import { getMessaging ,getToken} from "firebase/messaging";
 
 ////////////////////////////////////////////////
 
@@ -35,6 +36,12 @@ export const auth = initializeAuth(app,{
 });
 export const UserContext = createContext();
 
+/*
+export const messaging = getMessaging(app);
+*/
+const PublicKey = 'BFXfQCvbcQD_CubEN7gGfllOBNFo1HTc4l4vtAHzYqCDD2telkRrCv8_vGE_m2R6YFw00GOHDSWfIVPur2jxjGM'
+const PrivateKey = 'V3sA5DoYxpv6Pur553CDxX8-MrbGVAilifIE1b8nKLA'
+
 export default function TabLayout() {
   const [isconnected, setConnection] = useState(false);
   const navigation = useNavigation();
@@ -48,6 +55,19 @@ export default function TabLayout() {
     }),
   });
 
+ /* getToken(messaging, { vapidKey:PublicKey}).then((currentToken) => {
+        if (currentToken) {
+            console.log(currentToken)
+        } else {
+            // Show permission request UI
+            console.log('No registration token available. Request permission to generate one.');
+            // ...
+        }
+    }).catch((err) => {
+        console.log('An error occurred while retrieving token. ', err);
+        // ...
+    });
+*/
   useEffect(() => {
     // Auth state listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
