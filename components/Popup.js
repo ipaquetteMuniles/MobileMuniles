@@ -17,7 +17,7 @@ import {
   StyleSheet
 } from 'react-native';
 
-const Popup = ({text,fct,fctText,setModalVisible,modalVisible,onCloseFct,...rest}) => {
+const Popup = ({text,fct=null,fctText=null,setModalVisible,modalVisible,onCloseFct=null,...rest}) => {
     return (
       <Modal
         animationType="slide"
@@ -70,7 +70,7 @@ const Popup = ({text,fct,fctText,setModalVisible,modalVisible,onCloseFct,...rest
                 backgroundColor:'red'
               }}>
               <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
-                <Text style={{color:'white'}}>Close</Text>
+                <Text style={{color:'white'}}>Fermer</Text>
               </TouchableOpacity>
             </View>
           </View>
