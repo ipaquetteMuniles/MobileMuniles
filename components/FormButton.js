@@ -17,13 +17,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 ////////////////////////////////////////////////
 // App
 ////////////////////////////////////////////////
-const FormButton = ({onPress,buttonTitle,backgroundColor='#060270',color='white'})=> {
+const FormButton = ({onPress,buttonTitle,backgroundColor='white',color='#060270'})=> {
   return (
    <View style={{margin:10}}>
         <TouchableOpacity onPress={onPress}
-            style={{backgroundColor:backgroundColor,borderRadius:60}}
+            style={{backgroundColor:backgroundColor,borderRadius:60,borderColor:'gray',borderWidth:1}}
         >
-            <View style={{alignItems:'center'}}>
+            <View>
                 <Text style={{color:color,padding:10}}>{buttonTitle}</Text>
             </View>
         </TouchableOpacity>

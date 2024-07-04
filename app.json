@@ -1,64 +1,30 @@
 {
   "expo": {
-    "name": "munilesmobile",
-    "slug": "munilesmobile",
+    "name": "appMuniles",
+    "slug": "appMuniles",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
-    "userInterfaceStyle": "automatic",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Nous avons besoin de votre localisation pour nous permettre de vous avertir en cas d'alerte érosion.",
-        "NSLocationAlwaysUsageDescription": "Nous avons besoin de votre localisation pour nous permettre de vous avertir en cas d'alerte érosion.",
-        "UIBackgroundModes": [
-          "location",
-          "fetch",
-          "remote-notification"
-        ],
-        "NSMotionUsageDescription": "L'application utilisera le pédomètre pour vous donnez des données pointilleuses et réduire votr emprunte écologique.",
-        "NSPhotoLibraryUsageDescription": "Cette application nécessite l'accès à votre bibliothèque de photos pour choisir une photo de profil."
-      },
-      "bundleIdentifier": "com.ipaquette.munilesmobile"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-asset",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
-        }
-      ],
-      "expo-font"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "487b3e51-2e3a-4629-89d4-8738a9b99b7c"
-      }
+      "favicon": "./assets/logo.png"
     }
   }
 }
